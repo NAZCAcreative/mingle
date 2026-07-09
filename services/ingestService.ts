@@ -1,0 +1,76 @@
+import { getServerSupabase } from "@/lib/supabase/server";
+import { analyzeMessage } from "@/services/aiService";
+import { hasLocalIngested, latestLocalIngestedId, markLocalIngested } from "@/services/localStore";
+import { upsertRoomFromAnalysis } from "@/services/roomService";
+
+type SourceChat = {
+  id: number;
+  room?: string;
+  content?: string;
+  message?: string;
+  text?: string;
+  raw?: string;
+  sender?: string;
+  created_at?: string;
+  sent_at_text?: string;
+  [key: string]: unknown;
+};
+
+export async function ingestChats() {
+  const supabase = getServerSupabase();
+  const { data: latest } = supabase
+    ? await supabase.from("ingested_chats").select("id").order("id", { ascending: false }).limit(1).maybeSingle()
+    : { data: null };
+  const afterId = latest?.id ?? latestLocalIngestedId();
+  const baseUrl = process.env.CHAT_SOURCE_URL || "https://dm.kggstudio.com/chats";
+  const response = await fetch(`${baseUrl}?after_id=${afterId}`, { cache: "no-store" });
+
+  if (!response.ok) throw new Error(`chat source failed: ${response.status}`);
+
+  const payload = await response.json();
+  const chats: SourceChat[] = Array.isArray(payload) ? payload : payload.items ?? payload.chats ?? payload.data ?? [];
+  let processed = 0;
+  let upserted = 0;
+  let ignored = 0;
+
+  for (const chat of chats) {
+    const id = Number(chat.id);
+    const content = String(chat.content ?? chat.message ?? chat.text ?? "").trim();
+    if (!id || !content) continue;
+    if (!supabase && hasLocalIngested(id)) continue;
+
+    if (supabase) {
+      const { error: insertError } = await supabase.from("ingested_chats").upsert({
+        id,
+        raw: chat,
+        content,
+        sender: chat.sender ?? null,
+        created_at: chat.created_at ?? new Date().toISOString()
+      });
+      if (insertError) throw insertError;
+    } else {
+      markLocalIngested(id);
+    }
+
+    const analysis = await analyzeMessage(content);
+    const room = await upsertRoomFromAnalysis(analysis, String(id), chat.sender ? String(chat.sender).trim() : null);
+    const action = !analysis.is_actionable || analysis.type === "ignore" ? "ignored" : room ? "upserted" : "skipped";
+
+    if (action === "upserted") upserted += 1;
+    if (action === "ignored") ignored += 1;
+
+    if (supabase) {
+      await supabase.from("ai_logs").insert({
+        source_chat_id: id,
+        raw_message: content,
+        analysis,
+        action,
+        room_id: room?.id ?? null
+      });
+    }
+
+    processed += 1;
+  }
+
+  return { ok: true, processed, upserted, ignored, after_id: afterId, received: chats.length };
+}
