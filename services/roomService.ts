@@ -1,6 +1,6 @@
 import { ROOM_LIST_WINDOW_HOURS, ROOM_TTL_HOURS } from "@/lib/constants";
 import { findMergeCandidate } from "@/lib/matcher";
-import { addRoomTtl } from "@/lib/time";
+import { addRoomTtl, parseKoreanSentAtText } from "@/lib/time";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { cleanRoomTitle } from "@/lib/title";
 import {
@@ -18,6 +18,14 @@ import type { Room } from "@/types/room";
 
 type Gender = "male" | "female" | "other";
 
+type IngestedChatTimeRow = {
+  id: number;
+  created_at?: string | null;
+  raw?: {
+    sent_at_text?: string;
+  } | null;
+};
+
 export async function listActiveRooms(): Promise<Room[]> {
   const supabase = getServerSupabase();
   if (!supabase) return listLocalActiveRooms();
@@ -30,7 +38,8 @@ export async function listActiveRooms(): Promise<Room[]> {
     .gte("created_at", listSince)
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return withParticipantCounts(data ?? []);
+  const rooms = await withSourceChatTimes(data ?? []);
+  return withParticipantCounts(rooms);
 }
 
 export async function getRoom(roomId: string): Promise<Room | null> {
@@ -38,7 +47,8 @@ export async function getRoom(roomId: string): Promise<Room | null> {
   if (!supabase) return getLocalRoom(roomId);
   const { data, error } = await supabase.from("rooms").select("*").eq("id", roomId).maybeSingle();
   if (error) throw error;
-  const [room] = await withParticipantCounts(data ? [data] : []);
+  const rooms = await withSourceChatTimes(data ? [data] : []);
+  const [room] = await withParticipantCounts(rooms);
   return room ?? null;
 }
 
@@ -234,6 +244,39 @@ async function withParticipantCounts(rooms: Room[]): Promise<Room[]> {
       current_people: participantCount,
       participant_count: participantCount,
       gender_counts: counts
+    };
+  });
+}
+
+async function withSourceChatTimes(rooms: Room[]): Promise<Room[]> {
+  if (!rooms.length) return rooms;
+
+  const supabase = getServerSupabase();
+  if (!supabase) return rooms;
+
+  const sourceIds = Array.from(new Set(rooms.map((room) => Number(room.source_message_id)).filter((id) => Number.isFinite(id))));
+  if (!sourceIds.length) return rooms;
+
+  const { data, error } = await supabase.from("ingested_chats").select("id, created_at, raw").in("id", sourceIds);
+  if (error) return rooms;
+
+  const timesBySourceId = new Map<number, string>();
+  for (const item of (data ?? []) as IngestedChatTimeRow[]) {
+    const sentAt = parseKoreanSentAtText(item.raw?.sent_at_text);
+    const createdAt = item.created_at ? new Date(item.created_at) : null;
+    const sourceTime = sentAt ?? (createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt.toISOString() : null);
+    if (sourceTime) timesBySourceId.set(Number(item.id), sourceTime);
+  }
+
+  return rooms.map((room) => {
+    const sourceId = Number(room.source_message_id);
+    const sourceTime = timesBySourceId.get(sourceId);
+    if (!sourceTime) return room;
+
+    return {
+      ...room,
+      created_at: sourceTime,
+      last_message_at: sourceTime
     };
   });
 }

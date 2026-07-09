@@ -1,4 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase/server";
+import { parseKoreanSentAtText } from "@/lib/time";
 import { analyzeMessage } from "@/services/aiService";
 import { hasLocalIngested, latestLocalIngestedId, markLocalIngested } from "@/services/localStore";
 import { upsertRoomFromAnalysis } from "@/services/roomService";
@@ -87,11 +88,11 @@ export async function ingestChats() {
 }
 
 function resolveChatCreatedAt(chat: SourceChat) {
-  const createdAt = parseDateToIso(chat.created_at);
-  if (createdAt) return createdAt;
-
   const sentAt = parseKoreanSentAtText(chat.sent_at_text);
   if (sentAt) return sentAt;
+
+  const createdAt = parseDateToIso(chat.created_at);
+  if (createdAt) return createdAt;
 
   return new Date().toISOString();
 }
@@ -100,23 +101,6 @@ function parseDateToIso(value?: string) {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
-}
-
-function parseKoreanSentAtText(value?: string) {
-  if (!value) return null;
-
-  const match = value.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일.*?(오전|오후)\s*(\d{1,2}):(\d{2})/);
-  if (!match) return null;
-
-  const [, year, month, day, meridiem, hourText, minuteText] = match;
-  let hour = Number(hourText);
-  const minute = Number(minuteText);
-
-  if (meridiem === "오전" && hour === 12) hour = 0;
-  if (meridiem === "오후" && hour < 12) hour += 12;
-
-  const kstTime = Date.UTC(Number(year), Number(month) - 1, Number(day), hour - 9, minute);
-  return new Date(kstTime).toISOString();
 }
 
 async function fetchChatsAfter(baseUrl: string, afterId: number) {
