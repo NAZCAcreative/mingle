@@ -81,7 +81,7 @@ export function RoomCard({ room }: { room: Room }) {
         title="방 링크 복사"
       >
         {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-        {copied ? "복사됨" : "방 링크 복사"}
+        {copied ? "링크 복사됨" : "방 링크 복사"}
       </button>
 
       {previewOpen ? <RoomPreviewModal room={room} onClose={() => setPreviewOpen(false)} /> : null}
