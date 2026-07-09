@@ -7,7 +7,7 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { CountdownBadge } from "@/components/CountdownBadge";
 import { RoomPreviewModal } from "@/components/RoomPreviewModal";
 import { categoryMeta } from "@/lib/constants";
-import { formatCreatedAt } from "@/lib/time";
+import { formatChatAt } from "@/lib/time";
 import type { Room } from "@/types/room";
 
 export function RoomCard({ room }: { room: Room }) {
@@ -41,7 +41,7 @@ export function RoomCard({ room }: { room: Room }) {
             <div className="flex items-start justify-between gap-2">
               <span className={`flex h-[34px] items-center rounded-md px-2.5 text-[13px] font-black ${meta.badge}`}>{meta.label}</span>
               <span className="flex h-[34px] shrink-0 items-center rounded-md border border-neutral-100 bg-neutral-50 px-2.5 text-[13px] font-black text-neutral-600">
-                {formatCreatedAt(room.created_at)}
+                {formatChatAt(room.last_message_at)}
               </span>
             </div>
             <h3 className="mt-2 line-clamp-2 text-[20px] font-black leading-snug text-ink">{room.title}</h3>

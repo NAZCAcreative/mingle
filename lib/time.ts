@@ -28,7 +28,7 @@ export function isExpired(expireAt: string | Date) {
   return target.getTime() <= Date.now();
 }
 
-export function formatCreatedAt(value: string | Date) {
+export function formatChatAt(value: string | Date) {
   const date = typeof value === "string" ? new Date(value) : value;
   const now = new Date();
   const sameDate =
@@ -42,11 +42,11 @@ export function formatCreatedAt(value: string | Date) {
     hour12: false
   }).format(date);
 
-  if (sameDate) return `등록 ${time}`;
+  if (sameDate) return `채팅 ${time}`;
 
   const day = new Intl.DateTimeFormat("ko-KR", {
     month: "numeric",
     day: "numeric"
   }).format(date);
-  return `등록 ${day} ${time}`;
+  return `채팅 ${day} ${time}`;
 }

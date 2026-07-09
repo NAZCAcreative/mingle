@@ -36,6 +36,7 @@ export async function ingestChats() {
   for (const chat of chats) {
     const id = Number(chat.id);
     const content = String(chat.content ?? chat.message ?? chat.text ?? "").trim();
+    const chatCreatedAt = resolveChatCreatedAt(chat);
     if (!id || !content) continue;
     if (!supabase && hasLocalIngested(id)) continue;
 
@@ -45,7 +46,7 @@ export async function ingestChats() {
         raw: chat,
         content,
         sender: chat.sender ?? null,
-        created_at: chat.created_at ?? new Date().toISOString()
+        created_at: chatCreatedAt
       });
       if (insertError) throw insertError;
     } else {
@@ -57,7 +58,7 @@ export async function ingestChats() {
       analysis,
       String(id),
       chat.sender ? String(chat.sender).trim() : null,
-      chat.created_at ?? null
+      chatCreatedAt
     );
     const action = !analysis.is_actionable || analysis.type === "ignore" ? "ignored" : room ? "upserted" : "skipped";
 
@@ -78,6 +79,39 @@ export async function ingestChats() {
   }
 
   return { ok: true, processed, upserted, ignored, after_id: afterId, received: chats.length };
+}
+
+function resolveChatCreatedAt(chat: SourceChat) {
+  const createdAt = parseDateToIso(chat.created_at);
+  if (createdAt) return createdAt;
+
+  const sentAt = parseKoreanSentAtText(chat.sent_at_text);
+  if (sentAt) return sentAt;
+
+  return new Date().toISOString();
+}
+
+function parseDateToIso(value?: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function parseKoreanSentAtText(value?: string) {
+  if (!value) return null;
+
+  const match = value.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일.*?(오전|오후)\s*(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+
+  const [, year, month, day, meridiem, hourText, minuteText] = match;
+  let hour = Number(hourText);
+  const minute = Number(minuteText);
+
+  if (meridiem === "오전" && hour === 12) hour = 0;
+  if (meridiem === "오후" && hour < 12) hour += 12;
+
+  const kstTime = Date.UTC(Number(year), Number(month) - 1, Number(day), hour - 9, minute);
+  return new Date(kstTime).toISOString();
 }
 
 async function fetchChatsAfter(baseUrl: string, afterId: number) {
