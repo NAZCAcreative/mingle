@@ -4,11 +4,22 @@ import { createLocalMessage, listLocalMessages } from "@/services/localStore";
 import type { Message } from "@/types/message";
 
 export async function listMessages(roomId: string): Promise<Message[]> {
+  if (roomId.startsWith("local-")) return listLocalMessages(roomId);
+
   const supabase = getServerSupabase();
   if (!supabase) return listLocalMessages(roomId);
   const { data, error } = await supabase.from("messages").select("*").eq("room_id", roomId).order("created_at");
   if (error) throw error;
-  return data ?? [];
+
+  const { data: participants } = await supabase.from("room_participants").select("nickname, gender").eq("room_id", roomId);
+  const genderByNickname = new Map(
+    (participants ?? []).map((participant) => [String(participant.nickname), String(participant.gender) as Message["gender"]])
+  );
+
+  return (data ?? []).map((message) => ({
+    ...message,
+    gender: genderByNickname.get(message.nickname) ?? null
+  }));
 }
 
 export async function createMessage(roomId: string, nickname: string, content: string) {

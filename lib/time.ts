@@ -134,7 +134,7 @@ export function computeRoomExpireAt(baseTime: Date, meetingTimeText?: string | n
     const days = futureDay
       ? [meetingDay as Date]
       : [startOfDay(baseTime), new Date(startOfDay(baseTime).getTime() + DAY_MS)];
-    const windowStart = baseTime.getTime() - 30 * 60 * 1000;
+    const windowStart = baseTime.getTime() - MEETING_GRACE_MS;
     const windowEnd = futureDay ? Number.POSITIVE_INFINITY : baseTime.getTime() + 14 * 60 * 60 * 1000;
     const meeting = days
       .flatMap((day) => meetingClockCandidates(day, clock))

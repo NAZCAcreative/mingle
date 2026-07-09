@@ -3,6 +3,7 @@ import { parseKoreanSentAtText } from "@/lib/time";
 import { analyzeMessage } from "@/services/aiService";
 import { hasLocalIngested, latestLocalIngestedId, markLocalIngested } from "@/services/localStore";
 import { upsertRoomFromAnalysis } from "@/services/roomService";
+import type { AiAnalysis } from "@/types/ai";
 
 type SourceChat = {
   id: number;
@@ -18,6 +19,22 @@ type SourceChat = {
 };
 
 const INGEST_BATCH_SIZE = 60;
+
+const COMMENT_ANALYSIS: AiAnalysis = {
+  is_actionable: false,
+  type: "ignore",
+  category: "etc",
+  title: "",
+  summary: "댓글은 방 생성 대상이 아닙니다.",
+  origin: null,
+  destination: null,
+  meeting_time_text: null,
+  current_people: 0,
+  max_people: null,
+  keywords: [],
+  merge_key: "",
+  confidence: 1
+};
 
 export async function ingestChats() {
   const supabase = getServerSupabase();
@@ -57,6 +74,23 @@ export async function ingestChats() {
       if (insertError) throw insertError;
     } else {
       markLocalIngested(id);
+    }
+
+    if (isCommentChat(chat)) {
+      ignored += 1;
+
+      if (supabase) {
+        await supabase.from("ai_logs").insert({
+          source_chat_id: id,
+          raw_message: content,
+          analysis: COMMENT_ANALYSIS,
+          action: "ignored",
+          room_id: null
+        });
+      }
+
+      processed += 1;
+      continue;
     }
 
     const analysis = await analyzeMessage(content);
@@ -102,6 +136,29 @@ function parseDateToIso(value?: string) {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function isCommentChat(chat: SourceChat) {
+  const record = chat as Record<string, unknown>;
+  const parentIdFields = ["parent_id", "parentId", "parent_chat_id", "parentChatId", "reply_to_id", "replyToId"];
+  const commentFlagFields = ["is_comment", "isComment", "is_reply", "isReply"];
+  const messageTypeFields = ["type", "message_type", "messageType"];
+
+  if (parentIdFields.some((field) => hasValue(record[field]))) return true;
+  if (commentFlagFields.some((field) => isTrue(record[field]))) return true;
+
+  return messageTypeFields.some((field) => {
+    const value = String(record[field] ?? "").trim().toLowerCase();
+    return value === "comment" || value === "reply";
+  });
+}
+
+function hasValue(value: unknown) {
+  return value !== null && value !== undefined && value !== "" && value !== 0 && value !== "0";
+}
+
+function isTrue(value: unknown) {
+  return value === true || value === 1 || value === "1" || String(value).trim().toLowerCase() === "true";
 }
 
 async function fetchChatsAfter(baseUrl: string, afterId: number) {

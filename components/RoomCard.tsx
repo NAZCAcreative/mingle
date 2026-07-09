@@ -39,7 +39,7 @@ export function RoomCard({ room }: { room: Room }) {
         <div className="flex items-start justify-between gap-2">
           <span className={`flex h-[34px] items-center rounded-md px-2.5 text-[14px] font-light ${meta.badge}`}>{labels[room.category]}</span>
           <span className="flex h-[34px] shrink-0 items-center rounded-md border border-neutral-100 bg-neutral-50 px-2.5 text-[14px] font-light text-neutral-600">
-            {formatChatAt(room.last_message_at)}
+            {formatChatAt(room.source_chat_at ?? room.created_at)}
           </span>
         </div>
         <div className="mt-2 grid grid-cols-[86px_1fr] gap-3">

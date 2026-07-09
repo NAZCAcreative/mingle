@@ -2,7 +2,8 @@
 
 import { Bell, Check, HelpCircle, LogOut, Palette, ShieldCheck, UserRound, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { CafeteriaMenuButton } from "@/components/CafeteriaMenuButton";
 import { NicknameModal } from "@/components/NicknameModal";
 import { removeJoinedRoom, useMyChatRooms } from "@/hooks/useMyChatRooms";
 import { useNickname } from "@/hooks/useNickname";
@@ -16,6 +17,20 @@ export function Header() {
   const { theme, setTheme } = useThemeMode();
   const { displayName, profile, setProfile } = useNickname();
   const { alerts, unreadTotal, refreshAlerts } = useMyChatRooms(displayName);
+  const [adminNames, setAdminNames] = useState(["나스큐"]);
+
+  useEffect(() => {
+    const loadAdmins = async () => {
+      try {
+        const response = await fetch("/api/admin/admins", { cache: "no-store" });
+        const json = await response.json();
+        if (Array.isArray(json.admins) && json.admins.length) setAdminNames(json.admins);
+      } catch {
+        // Keep the fallback admin nickname available offline.
+      }
+    };
+    void loadAdmins();
+  }, []);
 
   const leaveJoinedRoom = async (roomId: string) => {
     if (!profile.nickname) return;
@@ -86,7 +101,7 @@ export function Header() {
           >
             <UserRound className="h-5 w-5" />
           </button>
-          {profile.nickname === "나스큐" ? (
+          {adminNames.includes(profile.nickname.trim()) ? (
             <Link
               href="/admin"
               className="grid h-11 w-11 place-items-center rounded-button bg-white text-mingle shadow-card"
@@ -223,6 +238,7 @@ export function Header() {
           ) : null}
         </div>
       </nav>
+      <CafeteriaMenuButton />
 
       {profileOpen ? (
         <div className="fixed inset-0 z-[1200] bg-ink/35 px-4 py-6" role="dialog" aria-modal="true" aria-label="닉네임 변경">

@@ -83,7 +83,9 @@ export function useMyChatRooms(nickname: string) {
 
   const loadRooms = useCallback(() => {
     const now = Date.now();
-    const nextRooms = readJoinedRooms().filter((room) => new Date(room.expire_at).getTime() > now);
+    const savedRooms = readJoinedRooms();
+    const nextRooms = savedRooms.filter((room) => !room.id.startsWith("local-") && new Date(room.expire_at).getTime() > now);
+    if (nextRooms.length !== savedRooms.length) writeJoinedRooms(nextRooms);
     setRooms(nextRooms);
     return nextRooms;
   }, []);

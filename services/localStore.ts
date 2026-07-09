@@ -152,7 +152,11 @@ export function registerLocalRoomOwner(roomId: string, nickname: string) {
 }
 
 export function listLocalMessages(roomId: string) {
-  return state.messages[roomId] ?? [];
+  const genders = state.participants[roomId] ?? {};
+  return (state.messages[roomId] ?? []).map((message) => ({
+    ...message,
+    gender: genders[message.nickname] ?? null
+  }));
 }
 
 export function joinLocalRoom(roomId: string, nickname: string, gender: Gender, previousNickname?: string) {

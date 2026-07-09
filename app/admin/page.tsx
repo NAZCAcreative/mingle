@@ -91,7 +91,10 @@ export default function AdminPage() {
     setData(await response.json());
   }, [profile.nickname]);
 
-  const section = useMemo(() => buildSection(active, data, closeRoom), [active, closeRoom, data]);
+  const section = useMemo(
+    () => buildSection(active, data, closeRoom, adminNames, setAdminNames, profile.nickname),
+    [active, adminNames, closeRoom, data, profile.nickname]
+  );
 
   if (!isAdmin) {
     return (
@@ -99,7 +102,7 @@ export default function AdminPage() {
         <section className="rounded-card bg-white p-5 shadow-card">
           <ShieldCheck className="h-8 w-8 text-mingle" />
           <h1 className="mt-3 text-2xl font-semibold text-ink">관리자 페이지</h1>
-          <p className="mt-2 text-sm font-medium leading-relaxed text-muted">닉네임이 관리자일 때만 접속할 수 있습니다.</p>
+          <p className="mt-2 text-sm font-medium leading-relaxed text-muted">등록된 관리자 닉네임일 때만 접속할 수 있습니다.</p>
           <div className="mt-4">
             <NicknameModal
               initialProfile={profile}
@@ -180,7 +183,14 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
   );
 }
 
-function buildSection(active: string, data: AdminOverview | null, onCloseRoom: (roomId: string) => void) {
+function buildSection(
+  active: string,
+  data: AdminOverview | null,
+  onCloseRoom: (roomId: string) => void,
+  adminNames: string[],
+  onAdminsChange: (admins: string[]) => void,
+  actor: string
+) {
   if (!data) return <p className="mt-4 text-sm font-medium text-muted">DB 데이터를 불러오고 있습니다.</p>;
 
   if (active === "대시보드") {
@@ -238,9 +248,83 @@ function buildSection(active: string, data: AdminOverview | null, onCloseRoom: (
       </div>
     );
   }
-  if (active === "운영 설정") return <SettingsEditor settings={data.settings} />;
+  if (active === "운영 설정") {
+    return (
+      <div className="mt-4 space-y-4">
+        <AdminNicknameManager admins={adminNames} actor={actor} onAdminsChange={onAdminsChange} />
+        <SettingsEditor settings={data.settings} />
+      </div>
+    );
+  }
 
   return <p className="mt-4 text-sm font-medium text-muted">배너/공지 DB 테이블을 연결하면 이 영역에서 관리합니다.</p>;
+}
+
+function AdminNicknameManager({
+  admins,
+  actor,
+  onAdminsChange
+}: {
+  admins: string[];
+  actor: string;
+  onAdminsChange: (admins: string[]) => void;
+}) {
+  const [nickname, setNickname] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const addAdmin = async () => {
+    const nextNickname = nickname.trim();
+    if (!nextNickname) return;
+
+    setSaving(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/admin/admins", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actor, nickname: nextNickname })
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setMessage(`추가 실패: ${json.error ?? response.status}`);
+        return;
+      }
+      onAdminsChange(Array.isArray(json.admins) ? json.admins : admins);
+      setNickname("");
+      setMessage("관리자 닉네임을 추가했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section className="rounded-xl border border-blush p-3">
+      <h3 className="text-sm font-semibold text-ink">관리자 닉네임 추가</h3>
+      <p className="mt-1 text-xs font-medium text-muted">현재 관리자: {admins.join(", ")}</p>
+      <div className="mt-3 flex gap-2">
+        <input
+          value={nickname}
+          onChange={(event) => setNickname(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") void addAdmin();
+          }}
+          className="h-10 min-w-0 flex-1 rounded-button border border-blush bg-cream px-3 text-sm outline-none focus:border-mingle"
+          placeholder="추가할 닉네임"
+          aria-label="추가할 관리자 닉네임"
+        />
+        <button
+          type="button"
+          onClick={() => void addAdmin()}
+          disabled={saving || !nickname.trim()}
+          className="h-10 shrink-0 rounded-button bg-mingle px-3 text-sm font-medium text-white disabled:bg-neutral-300"
+        >
+          {saving ? "추가중" : "추가"}
+        </button>
+      </div>
+      {message ? <p className="mt-2 text-xs font-medium text-muted">{message}</p> : null}
+    </section>
+  );
 }
 
 function SettingsEditor({ settings }: { settings: Array<{ key: string; label: string; value: string }> }) {

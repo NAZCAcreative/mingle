@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminNickname } from "@/lib/admins";
 import { getServerSupabase } from "@/lib/supabase/server";
-
-const adminNickname = "나스큐";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const roomId = String(body.room_id ?? "");
   const nickname = String(body.nickname ?? "").trim();
 
-  if (nickname !== adminNickname) {
+  if (!(await isAdminNickname(nickname))) {
     return NextResponse.json({ error: "admin_only" }, { status: 403 });
   }
 

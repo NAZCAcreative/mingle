@@ -1,19 +1,28 @@
-import { NextResponse } from "next/server";
-import { getServerSupabase } from "@/lib/supabase/server";
-
-const FALLBACK_ADMINS = ["나스큐"];
+import { NextRequest, NextResponse } from "next/server";
+import { isAdminNickname, listAdminNicknames, normalizeAdminNickname, saveAdminNicknames } from "@/lib/admins";
 
 export async function GET() {
-  const supabase = getServerSupabase();
-  if (!supabase) return NextResponse.json({ admins: FALLBACK_ADMINS });
+  return NextResponse.json({ admins: await listAdminNicknames() });
+}
 
-  const { data, error } = await supabase.from("app_settings").select("value").eq("key", "admin_nicknames").maybeSingle();
-  if (error || !data?.value) return NextResponse.json({ admins: FALLBACK_ADMINS });
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const actor = normalizeAdminNickname(String(body.actor ?? ""));
+  const nickname = normalizeAdminNickname(String(body.nickname ?? ""));
 
-  const admins = String(data.value)
-    .split(",")
-    .map((name) => name.trim())
-    .filter(Boolean);
+  if (!(await isAdminNickname(actor))) {
+    return NextResponse.json({ error: "admin_only" }, { status: 403 });
+  }
 
-  return NextResponse.json({ admins: Array.from(new Set([...FALLBACK_ADMINS, ...admins])) });
+  if (!nickname) {
+    return NextResponse.json({ error: "nickname is required" }, { status: 400 });
+  }
+
+  const currentAdmins = await listAdminNicknames();
+  const result = await saveAdminNicknames([...currentAdmins, nickname]);
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: 500 });
+  }
+
+  return NextResponse.json({ admins: result.admins });
 }

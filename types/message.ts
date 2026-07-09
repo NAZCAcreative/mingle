@@ -3,5 +3,6 @@ export interface Message {
   room_id: string;
   nickname: string;
   content: string;
+  gender?: "male" | "female" | "other" | null;
   created_at: string;
 }

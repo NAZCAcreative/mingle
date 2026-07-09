@@ -322,8 +322,8 @@ async function withSourceChatTimes(rooms: Room[]): Promise<Room[]> {
 
     return {
       ...room,
-      created_at: sourceTime,
-      last_message_at: sourceTime
+      source_chat_at: sourceTime,
+      created_at: sourceTime
     };
   });
 }

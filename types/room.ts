@@ -35,6 +35,7 @@ export interface Room {
     female: number;
     other: number;
   };
+  source_chat_at?: string | null;
   last_message_at: string;
   expire_at: string;
   created_at: string;
