@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { useEffect, useRef } from "react";
 import { ChatHeader } from "@/components/ChatHeader";
 import { MessageBubble } from "@/components/MessageBubble";
 import { MessageInput } from "@/components/MessageInput";
@@ -17,6 +18,35 @@ export default function RoomPage() {
   const { messages, send } = useMessages(roomId);
   const { ready, displayName, profile, setProfile } = useNickname();
   const countdown = useCountdown(room?.expire_at ?? new Date().toISOString());
+  const joinedNicknameRef = useRef("");
+
+  useEffect(() => {
+    if (!ready || !profile.gender || !room || countdown.expired || room.status === "expired") return;
+
+    const syncParticipant = async () => {
+      const previousNickname = joinedNicknameRef.current;
+
+      if (previousNickname && previousNickname !== profile.nickname) {
+        await fetch("/api/rooms/leave", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ room_id: roomId, nickname: previousNickname })
+        });
+      }
+
+      if (previousNickname !== profile.nickname) {
+        await fetch("/api/rooms/join", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ room_id: roomId, nickname: profile.nickname, gender: profile.gender })
+        });
+        joinedNicknameRef.current = profile.nickname;
+        await reload();
+      }
+    };
+
+    void syncParticipant();
+  }, [countdown.expired, profile.gender, profile.nickname, ready, reload, room, roomId]);
 
   if (loading) {
     return <main className="grid min-h-screen place-items-center px-6 font-black text-muted">채팅방을 불러오는 중이에요</main>;

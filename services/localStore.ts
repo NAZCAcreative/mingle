@@ -64,7 +64,8 @@ export function markLocalIngested(id: number) {
 }
 
 export function latestLocalIngestedId() {
-  return Math.max(100, ...Array.from(state.ingestedIds));
+  if (!state.ingestedIds.size) return null;
+  return Math.max(...Array.from(state.ingestedIds));
 }
 
 export function upsertLocalRoomFromAnalysis(

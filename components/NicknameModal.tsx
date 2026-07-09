@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Gender, UserProfile } from "@/hooks/useNickname";
 
 const genderOptions: Array<{ value: Gender; label: string }> = [
@@ -9,13 +9,26 @@ const genderOptions: Array<{ value: Gender; label: string }> = [
   { value: "other", label: "기타" }
 ];
 
-export function NicknameModal({ onSave }: { onSave: (profile: UserProfile) => void }) {
-  const [nickname, setNickname] = useState("");
-  const [gender, setGender] = useState<Gender | "">("");
+type NicknameModalProps = {
+  initialProfile?: UserProfile;
+  title?: string;
+  submitLabel?: string;
+  onCancel?: () => void;
+  onSave: (profile: UserProfile) => void;
+};
+
+export function NicknameModal({ initialProfile, title, submitLabel = "입장", onCancel, onSave }: NicknameModalProps) {
+  const [nickname, setNickname] = useState(initialProfile?.nickname ?? "");
+  const [gender, setGender] = useState<Gender | "">(initialProfile?.gender ?? "");
+
+  useEffect(() => {
+    setNickname(initialProfile?.nickname ?? "");
+    setGender(initialProfile?.gender ?? "");
+  }, [initialProfile]);
 
   return (
     <div className="rounded-card border border-blush bg-white p-4 shadow-card">
-      <p className="text-lg font-black text-ink">입장하려면 닉네임과 성별을 입력해 주세요</p>
+      <p className="text-lg font-black text-ink">{title ?? "입장하려면 닉네임과 성별을 입력해 주세요"}</p>
       <form
         className="mt-3 space-y-3"
         onSubmit={(event) => {
@@ -44,9 +57,16 @@ export function NicknameModal({ onSave }: { onSave: (profile: UserProfile) => vo
             </button>
           ))}
         </div>
-        <button disabled={!nickname.trim() || !gender} className="h-[54px] w-full rounded-button bg-mingle text-[17px] font-black text-white disabled:bg-neutral-300">
-          입장
-        </button>
+        <div className={onCancel ? "grid grid-cols-2 gap-2" : ""}>
+          {onCancel ? (
+            <button type="button" onClick={onCancel} className="h-[54px] rounded-button bg-cream text-[17px] font-black text-ink">
+              취소
+            </button>
+          ) : null}
+          <button disabled={!nickname.trim() || !gender} className="h-[54px] w-full rounded-button bg-mingle text-[17px] font-black text-white disabled:bg-neutral-300">
+            {submitLabel}
+          </button>
+        </div>
       </form>
     </div>
   );

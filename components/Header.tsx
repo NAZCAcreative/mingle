@@ -1,15 +1,19 @@
 "use client";
 
-import { Bell, Check, HelpCircle, Palette, X } from "lucide-react";
+import { Bell, Check, HelpCircle, Palette, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Mascot } from "@/components/Mascot";
+import { NicknameModal } from "@/components/NicknameModal";
+import { useNickname } from "@/hooks/useNickname";
 import { themeOptions, useThemeMode } from "@/hooks/useThemeMode";
 
 export function Header() {
   const [open, setOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const { theme, setTheme } = useThemeMode();
+  const { profile, setProfile } = useNickname();
 
   return (
     <header className="sticky top-0 z-[1000] border-b border-blush bg-cream/95 backdrop-blur">
@@ -34,6 +38,7 @@ export function Header() {
             onClick={() => {
               setGuideOpen(true);
               setOpen(false);
+              setProfileOpen(false);
             }}
             className="grid h-11 w-11 place-items-center rounded-button bg-white text-mingle shadow-card"
             aria-label="이용 안내"
@@ -43,7 +48,23 @@ export function Header() {
           </button>
           <button
             type="button"
-            onClick={() => setOpen((value) => !value)}
+            onClick={() => {
+              setProfileOpen(true);
+              setOpen(false);
+              setGuideOpen(false);
+            }}
+            className="grid h-11 w-11 place-items-center rounded-button bg-white text-mingle shadow-card"
+            aria-label={profile.nickname ? `닉네임 변경: ${profile.nickname}` : "닉네임 설정"}
+            title={profile.nickname ? `닉네임 변경: ${profile.nickname}` : "닉네임 설정"}
+          >
+            <UserRound className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen((value) => !value);
+              setProfileOpen(false);
+            }}
             className="grid h-11 w-11 place-items-center rounded-button bg-mingle text-white shadow-soft"
             aria-label="컨셉 설정"
             title="컨셉 설정"
@@ -80,6 +101,23 @@ export function Header() {
           ) : null}
         </div>
       </nav>
+
+      {profileOpen ? (
+        <div className="fixed inset-0 z-[1200] bg-ink/35 px-4 py-6" role="dialog" aria-modal="true" aria-label="닉네임 변경">
+          <div className="mx-auto mt-16 w-full max-w-[430px]">
+            <NicknameModal
+              initialProfile={profile}
+              title={profile.nickname ? "닉네임과 성별을 변경해 주세요" : "닉네임과 성별을 입력해 주세요"}
+              submitLabel="저장"
+              onCancel={() => setProfileOpen(false)}
+              onSave={(nextProfile) => {
+                setProfile(nextProfile);
+                setProfileOpen(false);
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
 
       {guideOpen ? (
         <div className="fixed inset-0 z-[1200] bg-ink/35 px-4 py-6" role="dialog" aria-modal="true" aria-label="Mingle 이용 안내">

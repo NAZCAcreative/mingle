@@ -21,9 +21,9 @@ export async function ingestChats() {
   const { data: latest } = supabase
     ? await supabase.from("ingested_chats").select("id").order("id", { ascending: false }).limit(1).maybeSingle()
     : { data: null };
-  const afterId = latest?.id ?? latestLocalIngestedId();
   const baseUrl = process.env.CHAT_SOURCE_URL || "https://dm.kggstudio.com/chats";
-  const response = await fetch(`${baseUrl}?after_id=${afterId}`, { cache: "no-store" });
+  const afterId = latest?.id ?? latestLocalIngestedId() ?? (await resolveLatestWindowAfterId(baseUrl));
+  const response = await fetchChatsAfter(baseUrl, afterId);
 
   if (!response.ok) throw new Error(`chat source failed: ${response.status}`);
 
@@ -78,4 +78,38 @@ export async function ingestChats() {
   }
 
   return { ok: true, processed, upserted, ignored, after_id: afterId, received: chats.length };
+}
+
+async function fetchChatsAfter(baseUrl: string, afterId: number) {
+  const response = await fetch(`${baseUrl}?after_id=${afterId}`, { cache: "no-store" });
+
+  if (!response.ok) throw new Error(`chat source failed: ${response.status}`);
+
+  return response;
+}
+
+async function resolveLatestWindowAfterId(baseUrl: string) {
+  let afterId = 100;
+  const ids: number[] = [];
+
+  for (let page = 0; page < 50; page += 1) {
+    const response = await fetchChatsAfter(baseUrl, afterId);
+    const payload = await response.json();
+    const chats: SourceChat[] = Array.isArray(payload) ? payload : payload.items ?? payload.chats ?? payload.data ?? [];
+
+    if (!chats.length) break;
+
+    for (const chat of chats) {
+      const id = Number(chat.id);
+      if (id) ids.push(id);
+    }
+
+    const nextAfterId = Number(chats.at(-1)?.id);
+    if (!nextAfterId || chats.length < 500) break;
+    afterId = nextAfterId;
+  }
+
+  const sortedIds = ids.sort((a, b) => a - b);
+  const firstLatestId = sortedIds.at(-500);
+  return firstLatestId ? Math.max(100, firstLatestId - 1) : 100;
 }
