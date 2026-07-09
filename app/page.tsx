@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CategoryChips } from "@/components/CategoryChips";
 import { EmptyState } from "@/components/EmptyState";
@@ -57,7 +57,13 @@ export default function HomePage() {
         </div>
 
         {loading ? (
-          <div className="mx-4 mt-4 rounded-card bg-white p-6 text-center font-bold text-muted shadow-card">방을 찾는 중이에요</div>
+          <div className="mx-4 mt-4 rounded-card bg-white p-6 text-center shadow-card">
+            <Loader2 className="mx-auto h-8 w-8 animate-spin text-mingle" />
+            <p className="mt-3 font-black text-muted">방을 찾는 중이에요</p>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-blush">
+              <div className="h-full w-1/2 animate-[pulse_1s_ease-in-out_infinite] rounded-full bg-mingle" />
+            </div>
+          </div>
         ) : pagedRooms.length ? (
           <>
             <div key={`${category}-${sortMode}-${currentPage}`} className="page-slide">
