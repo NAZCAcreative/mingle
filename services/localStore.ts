@@ -1,4 +1,5 @@
 import { ROOM_LIST_WINDOW_HOURS } from "@/lib/constants";
+import { findMergeCandidate } from "@/lib/matcher";
 import { addRoomTtl } from "@/lib/time";
 import { cleanRoomTitle } from "@/lib/title";
 import type { AiAnalysis } from "@/types/ai";
@@ -66,10 +67,34 @@ export function latestLocalIngestedId() {
   return Math.max(100, ...Array.from(state.ingestedIds));
 }
 
-export function upsertLocalRoomFromAnalysis(analysis: AiAnalysis, sourceMessageId?: string, kakaoSender?: string | null) {
+export function upsertLocalRoomFromAnalysis(
+  analysis: AiAnalysis,
+  sourceMessageId?: string,
+  kakaoSender?: string | null,
+  baseTime?: Date
+) {
   if (!analysis.is_actionable || analysis.type === "ignore") return null;
 
-  const now = new Date();
+  const now = baseTime ?? new Date();
+
+  // 같은 목적의 방이 이미 있으면 새로 만들지 않고 기존 방을 갱신한다.
+  const candidate = findMergeCandidate(listLocalActiveRooms(), analysis);
+  if (candidate) {
+    state.rooms = state.rooms.map((item) =>
+      item.id === candidate.id
+        ? {
+            ...item,
+            current_people: Math.max(item.current_people, analysis.current_people || 0),
+            max_people: analysis.max_people || item.max_people,
+            keywords: Array.from(new Set([...(item.keywords ?? []), ...(analysis.keywords ?? [])])),
+            last_message_at: now.toISOString(),
+            expire_at: addRoomTtl(now).toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        : item
+    );
+    return getLocalRoom(candidate.id);
+  }
 
   const room: Room = {
     id: `local-${sourceMessageId ?? crypto.randomUUID()}`,
@@ -121,6 +146,35 @@ export function joinLocalRoom(roomId: string, nickname: string, gender: Gender) 
     [nickname]: gender
   };
   return getLocalRoom(roomId);
+}
+
+export function leaveLocalRoom(roomId: string, nickname: string) {
+  const participants = state.participants[roomId];
+  if (!participants || !(nickname in participants)) return getLocalRoom(roomId);
+  const { [nickname]: _removed, ...rest } = participants;
+  state.participants[roomId] = rest;
+  return getLocalRoom(roomId);
+}
+
+export type RoomInfoPatch = {
+  title?: string;
+  summary?: string;
+  meeting_time_text?: string | null;
+  destination?: string | null;
+  max_people?: number | null;
+};
+
+export function updateLocalRoomInfo(roomId: string, nickname: string, patch: RoomInfoPatch) {
+  const room = state.rooms.find((item) => item.id === roomId);
+  if (!room) return { ok: false as const, error: "room_not_found" };
+  if (!room.owner_nickname || normalizeNickname(room.owner_nickname) !== normalizeNickname(nickname)) {
+    return { ok: false as const, error: "not_owner" };
+  }
+
+  state.rooms = state.rooms.map((item) =>
+    item.id === roomId ? { ...item, ...patch, updated_at: new Date().toISOString() } : item
+  );
+  return { ok: true as const, room: getLocalRoom(roomId) };
 }
 
 export function createLocalMessage(roomId: string, nickname: string, content: string) {

@@ -5,12 +5,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CountdownBadge } from "@/components/CountdownBadge";
+import { RoomPreviewModal } from "@/components/RoomPreviewModal";
 import { categoryMeta } from "@/lib/constants";
 import { formatCreatedAt } from "@/lib/time";
 import type { Room } from "@/types/room";
 
 export function RoomCard({ room }: { room: Room }) {
   const [copied, setCopied] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const meta = categoryMeta[room.category];
   const isQuestion = room.status === "answering";
   const cta = room.category === "life_question" ? "도와주기" : "입장하기";
@@ -30,7 +32,7 @@ export function RoomCard({ room }: { room: Room }) {
 
   return (
     <article className="rounded-card border border-blush bg-white p-4 shadow-card">
-      <Link href={href} className="block">
+      <button type="button" onClick={() => setPreviewOpen(true)} className="block w-full text-left" aria-label="방 정보 보기">
         <div className="grid grid-cols-[86px_1fr] gap-3">
           <div className={`grid h-[76px] w-[76px] place-items-center rounded-full ${meta.tint}`}>
             <CategoryIcon category={room.category} className="h-10 w-10 text-mingle" />
@@ -52,7 +54,7 @@ export function RoomCard({ room }: { room: Room }) {
             </p>
           </div>
         </div>
-      </Link>
+      </button>
 
       <div className="mt-4 flex items-end gap-2">
         <div className="min-w-0 flex-1">
@@ -81,6 +83,8 @@ export function RoomCard({ room }: { room: Room }) {
         {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
         {copied ? "복사됨" : "방 링크 복사"}
       </button>
+
+      {previewOpen ? <RoomPreviewModal room={room} onClose={() => setPreviewOpen(false)} /> : null}
     </article>
   );
 }

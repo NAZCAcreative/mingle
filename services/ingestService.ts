@@ -53,7 +53,12 @@ export async function ingestChats() {
     }
 
     const analysis = await analyzeMessage(content);
-    const room = await upsertRoomFromAnalysis(analysis, String(id), chat.sender ? String(chat.sender).trim() : null);
+    const room = await upsertRoomFromAnalysis(
+      analysis,
+      String(id),
+      chat.sender ? String(chat.sender).trim() : null,
+      chat.created_at ?? null
+    );
     const action = !analysis.is_actionable || analysis.type === "ignore" ? "ignored" : room ? "upserted" : "skipped";
 
     if (action === "upserted") upserted += 1;

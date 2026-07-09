@@ -1,8 +1,18 @@
-import { ROOM_LIST_WINDOW_HOURS } from "@/lib/constants";
+import { ROOM_LIST_WINDOW_HOURS, ROOM_TTL_HOURS } from "@/lib/constants";
+import { findMergeCandidate } from "@/lib/matcher";
 import { addRoomTtl } from "@/lib/time";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { cleanRoomTitle } from "@/lib/title";
-import { getLocalRoom, joinLocalRoom, listLocalActiveRooms, registerLocalRoomOwner, upsertLocalRoomFromAnalysis } from "@/services/localStore";
+import {
+  getLocalRoom,
+  joinLocalRoom,
+  leaveLocalRoom,
+  listLocalActiveRooms,
+  registerLocalRoomOwner,
+  updateLocalRoomInfo,
+  upsertLocalRoomFromAnalysis,
+  type RoomInfoPatch
+} from "@/services/localStore";
 import type { AiAnalysis } from "@/types/ai";
 import type { Room } from "@/types/room";
 
@@ -42,11 +52,42 @@ export async function expireRooms() {
   return { expired: data?.length ?? 0 };
 }
 
-export async function upsertRoomFromAnalysis(analysis: AiAnalysis, sourceMessageId?: string, kakaoSender?: string | null) {
+export async function upsertRoomFromAnalysis(
+  analysis: AiAnalysis,
+  sourceMessageId?: string,
+  kakaoSender?: string | null,
+  sourceCreatedAt?: string | null
+) {
   const supabase = getServerSupabase();
   if (!analysis.is_actionable || analysis.type === "ignore") return null;
-  if (!supabase) return upsertLocalRoomFromAnalysis(analysis, sourceMessageId, kakaoSender);
-  const now = new Date();
+
+  // 원본 메시지 시각 기준으로 방을 생성한다. TTL이 이미 지난 옛 메시지는 방을 만들지 않는다.
+  const sourceTime = sourceCreatedAt ? new Date(sourceCreatedAt) : null;
+  const baseTime = sourceTime && !Number.isNaN(sourceTime.getTime()) ? sourceTime : new Date();
+  if (Date.now() - baseTime.getTime() > ROOM_TTL_HOURS * 60 * 60 * 1000) return null;
+
+  if (!supabase) return upsertLocalRoomFromAnalysis(analysis, sourceMessageId, kakaoSender, baseTime);
+
+  // 같은 목적의 방이 이미 있으면 새로 만들지 않고 기존 방을 갱신한다.
+  const activeRooms = await listActiveRooms();
+  const candidate = findMergeCandidate(activeRooms, analysis);
+  if (candidate) {
+    const { data, error } = await supabase
+      .from("rooms")
+      .update({
+        current_people: Math.max(candidate.current_people, analysis.current_people || 0),
+        max_people: analysis.max_people || candidate.max_people,
+        keywords: Array.from(new Set([...(candidate.keywords ?? []), ...(analysis.keywords ?? [])])),
+        last_message_at: baseTime.toISOString(),
+        expire_at: addRoomTtl(baseTime).toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", candidate.id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data as Room;
+  }
 
   const { data, error } = await supabase
     .from("rooms")
@@ -65,8 +106,9 @@ export async function upsertRoomFromAnalysis(analysis: AiAnalysis, sourceMessage
       source_message_id: sourceMessageId,
       kakao_sender: kakaoSender ?? null,
       owner_nickname: null,
-      last_message_at: now.toISOString(),
-      expire_at: addRoomTtl(now).toISOString()
+      created_at: baseTime.toISOString(),
+      last_message_at: baseTime.toISOString(),
+      expire_at: addRoomTtl(baseTime).toISOString()
     })
     .select("*")
     .single();
@@ -79,6 +121,33 @@ export async function joinRoom(roomId: string, nickname: string, gender: "male" 
   if (!supabase) return joinLocalRoom(roomId, nickname, gender);
 
   return getRoom(roomId);
+}
+
+export async function leaveRoom(roomId: string, nickname: string) {
+  const supabase = getServerSupabase();
+  if (!supabase) return leaveLocalRoom(roomId, nickname);
+
+  return getRoom(roomId);
+}
+
+export async function updateRoomInfo(roomId: string, nickname: string, patch: RoomInfoPatch) {
+  const supabase = getServerSupabase();
+  if (!supabase) return updateLocalRoomInfo(roomId, nickname, patch);
+
+  const room = await getRoom(roomId);
+  if (!room) return { ok: false as const, error: "room_not_found" };
+  if (!room.owner_nickname || normalizeNickname(room.owner_nickname) !== normalizeNickname(nickname)) {
+    return { ok: false as const, error: "not_owner" };
+  }
+
+  const { data, error } = await supabase
+    .from("rooms")
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", roomId)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return { ok: true as const, room: data as Room };
 }
 
 export async function registerRoomOwner(roomId: string, nickname: string) {

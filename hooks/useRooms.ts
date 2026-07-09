@@ -26,7 +26,7 @@ export function useRooms() {
       if (!response.ok) return;
 
       const json = await response.json();
-      setRooms((current) => mergeRooms(current, json.rooms ?? []));
+      setRooms(json.rooms ?? []);
     } finally {
       if (showLoading) setLoading(false);
     }
@@ -108,21 +108,4 @@ function compareRooms(a: Room, b: Room, sortMode: RoomSortMode) {
 
 function compareByCreatedAt(a: Room, b: Room) {
   return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-}
-
-function mergeRooms(current: Room[], incoming: Room[]) {
-  const now = Date.now();
-  const byId = new Map<string, Room>();
-
-  for (const room of current) {
-    if (new Date(room.expire_at).getTime() > now && room.status !== "expired") {
-      byId.set(room.id, room);
-    }
-  }
-
-  for (const room of incoming) {
-    byId.set(room.id, room);
-  }
-
-  return Array.from(byId.values());
 }

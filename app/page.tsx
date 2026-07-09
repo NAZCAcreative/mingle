@@ -36,10 +36,9 @@ export default function HomePage() {
 
   return (
     <main className="pb-7">
-      <HeroCard />
       <CategoryChips selected={category} onSelect={changeCategory} />
 
-      <section className="mt-7">
+      <section className="mt-4">
         <div className="mx-4 flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-xl font-black text-ink">지금 열린 방</h2>
@@ -94,6 +93,8 @@ export default function HomePage() {
           <EmptyState />
         )}
       </section>
+
+      <HeroCard />
 
       <aside className="mx-4 mt-4 flex items-center gap-3 rounded-card bg-gradient-to-r from-blush to-white px-4 py-3 shadow-card">
         <img src="/img/mingu03.PNG" alt="" className="h-12 w-12 shrink-0 object-contain" />

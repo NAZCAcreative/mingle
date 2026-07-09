@@ -1,15 +1,25 @@
 "use client";
 
-import { Crown } from "lucide-react";
+import { Crown, LogOut, Pencil } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CountdownBadge } from "@/components/CountdownBadge";
+import { RoomEditModal } from "@/components/RoomEditModal";
 import { categoryMeta } from "@/lib/constants";
 import type { Room } from "@/types/room";
 
+function normalizeNickname(value: string) {
+  return value.replace(/\s+/g, "").toLowerCase();
+}
+
 export function ChatHeader({ room, nickname, onOwnerRegistered }: { room: Room; nickname: string; onOwnerRegistered: () => Promise<void> }) {
+  const router = useRouter();
   const [registering, setRegistering] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const meta = categoryMeta[room.category];
   const hasOwner = Boolean(room.owner_nickname);
+  const isOwner = hasOwner && Boolean(nickname) && normalizeNickname(room.owner_nickname ?? "") === normalizeNickname(nickname);
 
   const registerOwner = async () => {
     if (!nickname || registering || hasOwner) return;
@@ -27,6 +37,20 @@ export function ChatHeader({ room, nickname, onOwnerRegistered }: { room: Room; 
     }
 
     await onOwnerRegistered();
+  };
+
+  const leaveRoom = async () => {
+    if (leaving) return;
+    if (!window.confirm("방에서 나가시겠어요?")) return;
+    setLeaving(true);
+    if (nickname) {
+      await fetch("/api/rooms/leave", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ room_id: room.id, nickname })
+      });
+    }
+    router.push("/");
   };
 
   return (
@@ -63,6 +87,30 @@ export function ChatHeader({ room, nickname, onOwnerRegistered }: { room: Room; 
           ) : null}
         </div>
       </div>
+
+      <div className="mt-3 flex items-center gap-2">
+        {isOwner ? (
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-button bg-white px-3 text-sm font-black text-mingle shadow-card"
+          >
+            <Pencil className="h-4 w-4" />
+            방 정보 수정
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={leaveRoom}
+          disabled={leaving}
+          className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-button bg-white px-3 text-sm font-black text-muted shadow-card disabled:text-neutral-300"
+        >
+          <LogOut className="h-4 w-4" />
+          {leaving ? "나가는 중..." : "방 나가기"}
+        </button>
+      </div>
+
+      {editOpen ? <RoomEditModal room={room} onClose={() => setEditOpen(false)} onSaved={onOwnerRegistered} /> : null}
     </section>
   );
 }

@@ -13,7 +13,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-[1000] border-b border-blush bg-cream/95 backdrop-blur">
-      <div className="flex h-8 items-center justify-center bg-mingle px-4 text-[13px] font-black text-white">
+      <div className="flex h-11 items-center justify-center bg-mingle px-4 text-[17px] font-black tracking-tight text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.15)]">
         제주대학교 학점교류방 전용
       </div>
       <nav className="flex items-center justify-between gap-3 px-4 py-3">
