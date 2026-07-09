@@ -13,11 +13,11 @@ export const themeOptions: Array<{ value: ThemeMode; label: string; description:
 ];
 
 export function useThemeMode() {
-  const [theme, setThemeState] = useState<ThemeMode>("default");
+  const [theme, setThemeState] = useState<ThemeMode>("blue");
 
   useEffect(() => {
     const saved = localStorage.getItem(key) as ThemeMode | null;
-    const nextTheme = saved && themeOptions.some((option) => option.value === saved) ? saved : "default";
+    const nextTheme = saved && themeOptions.some((option) => option.value === saved) ? saved : "blue";
     applyTheme(nextTheme);
     setThemeState(nextTheme);
   }, []);
