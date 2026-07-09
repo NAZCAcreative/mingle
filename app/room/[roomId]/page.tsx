@@ -61,11 +61,11 @@ export default function RoomPage() {
   }, [messages.length]);
 
   if (loading) {
-    return <main className="grid min-h-screen place-items-center px-6 font-black text-muted">채팅방을 불러오는 중이에요</main>;
+    return <main className="grid min-h-screen place-items-center px-6 font-semibold text-muted">채팅방을 불러오는 중이에요</main>;
   }
 
   if (!room) {
-    return <main className="grid min-h-screen place-items-center px-6 font-black text-muted">방이 종료되었거나 찾을 수 없어요</main>;
+    return <main className="grid min-h-screen place-items-center px-6 font-semibold text-muted">방이 종료되었거나 찾을 수 없어요</main>;
   }
 
   const expired = countdown.expired || room.status === "expired";
@@ -87,10 +87,10 @@ export default function RoomPage() {
     <main className="flex min-h-screen flex-col">
       <ChatHeader room={room} nickname={profile.nickname} onOwnerRegistered={reload} />
       <section className="mx-4 mt-4 rounded-card border border-blush bg-white p-4 shadow-card">
-        <p className="text-sm font-black text-mingle">원본 대화에서 추출한 요약 정보</p>
-        <p className="mt-2 text-[15px] font-bold leading-relaxed text-ink">{room.summary}</p>
+        <p className="text-sm font-semibold text-mingle">원본 대화에서 추출한 요약 정보</p>
+        <p className="mt-2 text-[15px] font-medium leading-relaxed text-ink">{room.summary}</p>
         {detailItems.length ? (
-          <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-bold text-muted">
+          <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-medium text-muted">
             {detailItems.map((item) => (
               <span key={item} className="rounded-xl bg-cream px-3 py-2">
                 {item}
@@ -102,7 +102,7 @@ export default function RoomPage() {
 
       <section className="flex-1 space-y-3 px-4 py-4">
         {!ready && !expired && <NicknameModal onSave={saveProfile} />}
-        {expired && <div className="rounded-card bg-white p-5 text-center font-black text-muted shadow-card">방이 종료되었습니다</div>}
+        {expired && <div className="rounded-card bg-white p-5 text-center font-semibold text-muted shadow-card">방이 종료되었습니다</div>}
         {messages.map((message) => (
           <MessageBubble key={message.id} message={message} mine={message.nickname === displayName} />
         ))}

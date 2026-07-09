@@ -39,13 +39,13 @@ export function RoomCard({ room }: { room: Room }) {
           </div>
           <div className="min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <span className={`flex h-[34px] items-center rounded-md px-2.5 text-[13px] font-black ${meta.badge}`}>{meta.label}</span>
-              <span className="flex h-[34px] shrink-0 items-center rounded-md border border-neutral-100 bg-neutral-50 px-2.5 text-[13px] font-black text-neutral-600">
+              <span className={`flex h-[34px] items-center rounded-md px-2.5 text-[13px] font-semibold ${meta.badge}`}>{meta.label}</span>
+              <span className="flex h-[34px] shrink-0 items-center rounded-md border border-neutral-100 bg-neutral-50 px-2.5 text-[13px] font-semibold text-neutral-600">
                 {formatChatAt(room.last_message_at)}
               </span>
             </div>
-            <h3 className="mt-2 line-clamp-2 text-[20px] font-black leading-snug text-ink">{room.title}</h3>
-            <p className="mt-2 line-clamp-1 text-[15px] font-bold text-muted">
+            <h3 className="mt-2 line-clamp-2 text-[20px] font-semibold leading-snug text-ink">{room.title}</h3>
+            <p className="mt-2 line-clamp-1 text-[15px] font-medium text-muted">
               <span className="text-[#3B82F6]">남자 {maleCount}명</span>
               {" · "}
               <span className="text-mingle">여자 {femaleCount}명</span>
@@ -62,7 +62,7 @@ export function RoomCard({ room }: { room: Room }) {
         </div>
         <div className="shrink-0 text-right">
           <Link
-            className={`flex h-[56px] min-w-[116px] items-center justify-center gap-2 rounded-button px-4 text-[17px] font-black text-white shadow-soft ${
+            className={`flex h-[56px] min-w-[116px] items-center justify-center gap-2 rounded-button px-4 text-[17px] font-semibold text-white shadow-soft ${
               cta === "도와주기" ? "bg-mingle" : "bg-success"
             }`}
             href={href}
@@ -76,7 +76,7 @@ export function RoomCard({ room }: { room: Room }) {
       <button
         type="button"
         onClick={copyLink}
-        className="mt-3 flex h-[46px] w-full items-center justify-center gap-2 rounded-button bg-blush px-4 text-[15px] font-black text-mingle"
+        className="mt-3 flex h-[46px] w-full items-center justify-center gap-2 rounded-button bg-blush px-4 text-[15px] font-semibold text-mingle"
         aria-label="방 링크 복사"
         title="방 링크 복사"
       >

@@ -37,7 +37,7 @@ export function Header() {
         <Link href="/" className="flex min-w-0 items-center gap-2" aria-label="홈으로 이동">
           <Mascot size="sm" />
           <div className="min-w-0">
-            <h1 className="text-[30px] font-black leading-none tracking-normal text-mingle">mingle</h1>
+            <h1 className="text-[30px] font-semibold leading-none tracking-normal text-mingle">mingle</h1>
           </div>
         </Link>
 
@@ -56,7 +56,7 @@ export function Header() {
           >
             <Bell className="h-5 w-5" />
             {unreadTotal > 0 ? (
-              <span className="absolute -right-1 -top-1 grid h-5 min-w-[20px] place-items-center rounded-full bg-success px-1 text-[11px] font-black text-white">
+              <span className="absolute -right-1 -top-1 grid h-5 min-w-[20px] place-items-center rounded-full bg-success px-1 text-[11px] font-semibold text-white">
                 {unreadTotal > 99 ? "99+" : unreadTotal}
               </span>
             ) : null}
@@ -106,27 +106,27 @@ export function Header() {
           {notificationsOpen ? (
             <div className="absolute right-0 top-[52px] z-40 w-72 overflow-hidden rounded-card border border-blush bg-white shadow-card">
               <div className="border-b border-blush px-4 py-3">
-                <p className="text-sm font-black text-ink">내 대화</p>
-                <p className="mt-0.5 text-xs font-bold text-muted">
+                <p className="text-sm font-semibold text-ink">내 대화</p>
+                <p className="mt-0.5 text-xs font-medium text-muted">
                   참여 중인 방 {alerts.length}개{unreadTotal > 0 ? ` · 새 메시지 ${unreadTotal}개` : ""}
                 </p>
               </div>
               <div className="max-h-[360px] overflow-y-auto p-2">
                 {alerts.length === 0 ? (
-                  <p className="px-3 py-5 text-center text-sm font-bold text-muted">참여 중인 대화방이 없습니다.</p>
+                  <p className="px-3 py-5 text-center text-sm font-medium text-muted">참여 중인 대화방이 없습니다.</p>
                 ) : (
                   alerts.map((room) => (
                     <div key={room.id} className="rounded-[14px] px-3 py-3 hover:bg-blush">
                       <Link href={`/room/${room.id}`} onClick={() => setNotificationsOpen(false)} className="block text-left">
                         <span className="flex items-start justify-between gap-2">
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[15px] font-black text-ink">{room.title}</span>
-                            <span className="mt-1 block truncate text-xs font-bold text-muted">
+                            <span className="block truncate text-[15px] font-semibold text-ink">{room.title}</span>
+                            <span className="mt-1 block truncate text-xs font-medium text-muted">
                               {room.latestMessage ? `${room.latestMessage.nickname}: ${room.latestMessage.content}` : "아직 대화가 없습니다"}
                             </span>
                           </span>
                           {room.unreadCount > 0 ? (
-                            <span className="grid h-6 min-w-6 shrink-0 place-items-center rounded-full bg-success px-1.5 text-xs font-black text-white">
+                            <span className="grid h-6 min-w-6 shrink-0 place-items-center rounded-full bg-success px-1.5 text-xs font-semibold text-white">
                               {room.unreadCount > 99 ? "99+" : room.unreadCount}
                             </span>
                           ) : null}
@@ -135,7 +135,7 @@ export function Header() {
                       <button
                         type="button"
                         onClick={() => void leaveJoinedRoom(room.id)}
-                        className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-button bg-white px-2.5 text-xs font-black text-muted shadow-card"
+                        className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-button bg-white px-2.5 text-xs font-semibold text-muted shadow-card"
                       >
                         <LogOut className="h-3.5 w-3.5" />
                         방 나가기
@@ -149,7 +149,7 @@ export function Header() {
 
           {open ? (
             <div className="absolute right-0 top-[52px] z-40 w-56 overflow-hidden rounded-card border border-blush bg-white p-2 shadow-card">
-              <p className="px-3 py-2 text-sm font-black text-ink">컨셉 변경</p>
+              <p className="px-3 py-2 text-sm font-semibold text-ink">컨셉 변경</p>
               {themeOptions.map((option) => {
                 const active = theme === option.value;
                 return (
@@ -165,8 +165,8 @@ export function Header() {
                     }`}
                   >
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[15px] font-black">{option.label}</span>
-                      <span className="mt-0.5 block text-xs font-bold text-muted">{option.description}</span>
+                      <span className="block text-[15px] font-semibold">{option.label}</span>
+                      <span className="mt-0.5 block text-xs font-medium text-muted">{option.description}</span>
                     </span>
                     {active ? <Check className="h-5 w-5 shrink-0" /> : null}
                   </button>
@@ -198,7 +198,7 @@ export function Header() {
         <div className="fixed inset-0 z-[1200] bg-ink/35 px-4 py-6" role="dialog" aria-modal="true" aria-label="Mingle 이용 안내">
           <div className="mx-auto flex max-h-[calc(100vh-48px)] w-full max-w-[430px] flex-col overflow-hidden rounded-card bg-white shadow-card">
             <div className="flex items-center justify-between border-b border-blush px-5 py-4">
-              <h2 className="text-xl font-black text-ink">Mingle 이용 안내</h2>
+              <h2 className="text-xl font-semibold text-ink">Mingle 이용 안내</h2>
               <button
                 type="button"
                 onClick={() => setGuideOpen(false)}
@@ -212,14 +212,14 @@ export function Header() {
 
             <div className="space-y-5 overflow-y-auto px-5 py-4 text-[15px] font-semibold leading-relaxed text-ink">
               <section>
-                <h3 className="text-base font-black text-mingle">AI가 제주대 학점교류방 글을 분석합니다.</h3>
+                <h3 className="text-base font-semibold text-mingle">AI가 제주대 학점교류방 글을 분석합니다.</h3>
                 <p className="mt-2 text-muted">
                   제주대 학점교류방에 올라온 게시글을 AI가 분석하여 같은 목적의 사람들과 즉석 채팅방을 자동으로 생성합니다.
                 </p>
               </section>
 
               <section>
-                <h3 className="text-base font-black text-mingle">이용 방법</h3>
+                <h3 className="text-base font-semibold text-mingle">이용 방법</h3>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
                   <li>원하는 방을 선택하여 바로 참여할 수 있습니다.</li>
                   <li>현재는 로그인 없이 이용 가능합니다.</li>
@@ -228,12 +228,12 @@ export function Header() {
               </section>
 
               <section>
-                <h3 className="text-base font-black text-mingle">방장 등록</h3>
+                <h3 className="text-base font-semibold text-mingle">방장 등록</h3>
                 <p className="mt-2 text-muted">게시글 작성자의 닉네임과 방 참가 닉네임이 일치하면 자동으로 방장으로 등록됩니다.</p>
               </section>
 
               <section>
-                <h3 className="text-base font-black text-mingle">방 자동 삭제(방폭)</h3>
+                <h3 className="text-base font-semibold text-mingle">방 자동 삭제(방폭)</h3>
                 <p className="mt-2 text-muted">활동 중인 방만 유지하기 위해 자동 삭제 기능이 적용됩니다.</p>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
                   <li>마지막 대화 후 6시간 동안 대화가 없으면 방이 자동 삭제됩니다.</li>
@@ -242,7 +242,7 @@ export function Header() {
               </section>
 
               <section>
-                <h3 className="text-base font-black text-mingle">방 이용 안내</h3>
+                <h3 className="text-base font-semibold text-mingle">방 이용 안내</h3>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
                   <li>목적에 맞는 방에만 참여해 주세요.</li>
                   <li>시간, 장소가 변경되면 채팅으로 공유해 주세요.</li>
@@ -251,7 +251,7 @@ export function Header() {
               </section>
 
               <section>
-                <h3 className="text-base font-black text-mingle">신고 및 이용 제한</h3>
+                <h3 className="text-base font-semibold text-mingle">신고 및 이용 제한</h3>
                 <p className="mt-2 text-muted">다음과 같은 행위는 서비스 이용이 제한될 수 있습니다.</p>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
                   <li>욕설 및 비방</li>
@@ -263,12 +263,12 @@ export function Header() {
               </section>
 
               <section>
-                <h3 className="text-base font-black text-mingle">개인정보 안내</h3>
+                <h3 className="text-base font-semibold text-mingle">개인정보 안내</h3>
                 <p className="mt-2 text-muted">전화번호, 계좌번호 등 개인정보는 필요한 경우에만 직접 공유해 주세요.</p>
               </section>
 
               <section>
-                <h3 className="text-base font-black text-mingle">Beta 서비스</h3>
+                <h3 className="text-base font-semibold text-mingle">Beta 서비스</h3>
                 <p className="mt-2 text-muted">
                   현재 Mingle은 베타 서비스입니다. 더 편리한 이용을 위해 로그인, 알림, 친구 기능 등 다양한 기능이 순차적으로 추가될 예정입니다.
                 </p>

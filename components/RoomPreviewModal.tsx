@@ -51,7 +51,7 @@ export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () =>
             <span className={`grid h-9 w-9 place-items-center rounded-full ${meta.tint}`}>
               <CategoryIcon category={room.category} className="h-5 w-5 text-mingle" />
             </span>
-            <span className={`rounded-md px-2 py-1 text-xs font-black ${meta.badge}`}>{meta.label}</span>
+            <span className={`rounded-md px-2 py-1 text-xs font-semibold ${meta.badge}`}>{meta.label}</span>
           </div>
           <button
             type="button"
@@ -65,16 +65,16 @@ export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () =>
         </div>
 
         <div className="space-y-4 overflow-y-auto px-5 py-4">
-          <h2 className="text-xl font-black leading-snug text-ink">{room.title}</h2>
+          <h2 className="text-xl font-semibold leading-snug text-ink">{room.title}</h2>
 
-          {room.summary ? <p className="text-[15px] font-bold leading-relaxed text-muted">{room.summary}</p> : null}
+          {room.summary ? <p className="text-[15px] font-medium leading-relaxed text-muted">{room.summary}</p> : null}
 
           <div className="rounded-card bg-cream p-4">
-            <p className="flex items-center gap-1.5 text-sm font-black text-ink">
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
               <Users className="h-4 w-4 text-mingle" />
               참여 인원 {totalCount}명
             </p>
-            <p className="mt-2 text-[15px] font-bold">
+            <p className="mt-2 text-[15px] font-medium">
               <span className="text-[#3B82F6]">남자 {maleCount}명</span>
               <span className="text-muted"> · </span>
               <span className="text-mingle">여자 {femaleCount}명</span>
@@ -82,13 +82,13 @@ export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () =>
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-sm font-bold text-muted">
+          <div className="grid grid-cols-2 gap-2 text-sm font-medium text-muted">
             <span className="rounded-xl bg-cream px-3 py-2">시간: {room.meeting_time_text || "미정"}</span>
             <span className="rounded-xl bg-cream px-3 py-2">장소: {place || "미정"}</span>
           </div>
 
           {room.owner_nickname ? (
-            <p className="inline-flex items-center gap-1.5 rounded-md bg-blush px-2.5 py-1.5 text-sm font-black text-mingle">
+            <p className="inline-flex items-center gap-1.5 rounded-md bg-blush px-2.5 py-1.5 text-sm font-semibold text-mingle">
               <Crown className="h-4 w-4" />
               방장 {room.owner_nickname}
             </p>
@@ -97,17 +97,17 @@ export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () =>
           <CountdownBadge expireAt={room.expire_at} wide />
 
           <section className="rounded-card bg-cream p-4">
-            <h3 className="text-sm font-black text-ink">대화 전문</h3>
+            <h3 className="text-sm font-semibold text-ink">대화 전문</h3>
             <div className="mt-3 space-y-2">
-              {messagesLoading ? <p className="text-sm font-bold text-muted">불러오는 중...</p> : null}
-              {!messagesLoading && messages.length === 0 ? <p className="text-sm font-bold text-muted">아직 대화가 없습니다.</p> : null}
+              {messagesLoading ? <p className="text-sm font-medium text-muted">불러오는 중...</p> : null}
+              {!messagesLoading && messages.length === 0 ? <p className="text-sm font-medium text-muted">아직 대화가 없습니다.</p> : null}
               {messages.map((message) => (
                 <div key={message.id} className="rounded-xl bg-white px-3 py-2">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="min-w-0 truncate text-sm font-black text-mingle">{message.nickname}</span>
-                    <time className="shrink-0 text-xs font-bold text-muted">{new Date(message.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</time>
+                    <span className="min-w-0 truncate text-sm font-semibold text-mingle">{message.nickname}</span>
+                    <time className="shrink-0 text-xs font-medium text-muted">{new Date(message.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</time>
                   </div>
-                  <p className="mt-1 whitespace-pre-wrap break-words text-[15px] font-bold leading-relaxed text-ink">{message.content}</p>
+                  <p className="mt-1 whitespace-pre-wrap break-words text-[15px] font-medium leading-relaxed text-ink">{message.content}</p>
                 </div>
               ))}
             </div>
@@ -117,7 +117,7 @@ export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () =>
         <div className="border-t border-blush px-5 py-4">
           <Link
             href={href}
-            className={`flex h-[54px] w-full items-center justify-center gap-2 rounded-button text-[17px] font-black text-white shadow-soft ${
+            className={`flex h-[54px] w-full items-center justify-center gap-2 rounded-button text-[17px] font-semibold text-white shadow-soft ${
               cta === "도와주기" ? "bg-mingle" : "bg-success"
             }`}
           >

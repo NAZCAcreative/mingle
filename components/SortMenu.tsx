@@ -23,7 +23,7 @@ export function SortMenu({ value, onChange }: { value: RoomSortMode; onChange: (
       <button
         type="button"
         onClick={() => setOpen((next) => !next)}
-        className="flex h-[52px] w-full min-w-[120px] items-center justify-center gap-2 rounded-button bg-white px-4 text-[16px] font-black text-ink shadow-card"
+        className="flex h-[52px] w-full min-w-[120px] items-center justify-center gap-2 rounded-button bg-white px-4 text-[16px] font-semibold text-ink shadow-card"
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -44,7 +44,7 @@ export function SortMenu({ value, onChange }: { value: RoomSortMode; onChange: (
                   onChange(option.value);
                   setOpen(false);
                 }}
-                className={`flex h-[50px] w-full items-center gap-2 px-4 text-left text-[16px] font-black ${
+                className={`flex h-[50px] w-full items-center gap-2 px-4 text-left text-[16px] font-semibold ${
                   active ? "bg-blush text-mingle" : "text-ink hover:bg-blush"
                 }`}
                 role="menuitem"

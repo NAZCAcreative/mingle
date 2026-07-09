@@ -59,16 +59,16 @@ export function ChatHeader({ room, nickname, onOwnerRegistered }: { room: Room; 
     <section className="border-b border-blush bg-cream/95 px-4 py-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-black leading-tight text-ink">{room.title}</h1>
+          <h1 className="text-2xl font-semibold leading-tight text-ink">{room.title}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className={`rounded-md px-2 py-1 text-xs font-black ${meta.badge}`}>{meta.label}</span>
+            <span className={`rounded-md px-2 py-1 text-xs font-semibold ${meta.badge}`}>{meta.label}</span>
             {hasOwner ? (
-              <span className="inline-flex items-center gap-1 rounded-md bg-blush px-2 py-1 text-xs font-black text-mingle">
+              <span className="inline-flex items-center gap-1 rounded-md bg-blush px-2 py-1 text-xs font-semibold text-mingle">
                 <Crown className="h-3.5 w-3.5" />
                 방장 {room.owner_nickname}
               </span>
             ) : null}
-            <span className="text-sm font-bold text-muted">
+            <span className="text-sm font-medium text-muted">
               현재 {room.current_people}
               {room.max_people ? `/${room.max_people}명` : "개 답변"}
             </span>
@@ -81,7 +81,7 @@ export function ChatHeader({ room, nickname, onOwnerRegistered }: { room: Room; 
               type="button"
               onClick={registerOwner}
               disabled={!nickname || registering}
-              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-button bg-mingle px-3 text-sm font-black text-white shadow-soft disabled:bg-neutral-300"
+              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-button bg-mingle px-3 text-sm font-semibold text-white shadow-soft disabled:bg-neutral-300"
             >
               <Crown className="h-4 w-4" />
               {registering ? "등록중" : "방장등록"}
@@ -95,7 +95,7 @@ export function ChatHeader({ room, nickname, onOwnerRegistered }: { room: Room; 
           <button
             type="button"
             onClick={() => setEditOpen(true)}
-            className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-button bg-white px-3 text-sm font-black text-mingle shadow-card"
+            className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-button bg-white px-3 text-sm font-semibold text-mingle shadow-card"
           >
             <Pencil className="h-4 w-4" />
             방 정보 수정
@@ -105,7 +105,7 @@ export function ChatHeader({ room, nickname, onOwnerRegistered }: { room: Room; 
           type="button"
           onClick={leaveRoom}
           disabled={leaving}
-          className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-button bg-white px-3 text-sm font-black text-muted shadow-card disabled:text-neutral-300"
+          className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-button bg-white px-3 text-sm font-semibold text-muted shadow-card disabled:text-neutral-300"
         >
           <LogOut className="h-4 w-4" />
           {leaving ? "나가는 중..." : "방 나가기"}

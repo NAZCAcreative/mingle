@@ -9,7 +9,7 @@ export function CountdownBadge({ expireAt, wide = false }: { expireAt: string; w
 
   return (
     <div
-      className={`flex items-center justify-center gap-2 rounded-button font-black shadow-card ${sizeClass} ${
+      className={`flex items-center justify-center gap-2 rounded-button font-semibold shadow-card ${sizeClass} ${
         expired
           ? "bg-neutral-100 text-neutral-400"
           : warning
