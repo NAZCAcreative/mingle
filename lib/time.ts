@@ -182,13 +182,10 @@ export function isExpired(expireAt: string | Date) {
 
 export function formatChatAt(value: string | Date) {
   const date = typeof value === "string" ? new Date(value) : value;
-  const now = new Date();
-  const sameDate =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
+  const sameDate = startOfDay(date).getTime() === startOfDay(new Date()).getTime();
 
   const time = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false
@@ -197,6 +194,7 @@ export function formatChatAt(value: string | Date) {
   if (sameDate) return `생성 ${time}`;
 
   const day = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
     month: "numeric",
     day: "numeric"
   }).format(date);
