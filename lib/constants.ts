@@ -80,5 +80,9 @@ export const visibleCategories: Category[] = [
   "food_drink",
   "cafe",
   "hobby_sport",
-  "life_question"
+  "life_question",
+  "class_question",
+  "trade",
+  "event",
+  "etc"
 ];

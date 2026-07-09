@@ -2,12 +2,16 @@
 
 import { Crown, Link as LinkIcon, Users, X } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CountdownBadge } from "@/components/CountdownBadge";
 import { categoryMeta } from "@/lib/constants";
+import type { Message } from "@/types/message";
 import type { Room } from "@/types/room";
 
 export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () => void }) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(true);
   const meta = categoryMeta[room.category];
   const cta = room.category === "life_question" ? "도와주기" : "입장하기";
   const href = `/room/${room.id}`;
@@ -16,6 +20,28 @@ export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () =>
   const femaleCount = room.gender_counts?.female ?? 0;
   const otherCount = room.gender_counts?.other ?? 0;
   const totalCount = room.participant_count ?? maleCount + femaleCount + otherCount;
+
+  useEffect(() => {
+    let active = true;
+
+    const loadMessages = async () => {
+      setMessagesLoading(true);
+      try {
+        const response = await fetch(`/api/messages?roomId=${room.id}`, { cache: "no-store" });
+        if (!response.ok) return;
+        const json = await response.json();
+        if (active) setMessages(json.messages ?? []);
+      } finally {
+        if (active) setMessagesLoading(false);
+      }
+    };
+
+    void loadMessages();
+
+    return () => {
+      active = false;
+    };
+  }, [room.id]);
 
   return (
     <div className="fixed inset-0 z-[1200] bg-ink/35 px-4 py-6" role="dialog" aria-modal="true" aria-label="방 정보">
@@ -52,7 +78,7 @@ export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () =>
               <span className="text-[#3B82F6]">남자 {maleCount}명</span>
               <span className="text-muted"> · </span>
               <span className="text-mingle">여자 {femaleCount}명</span>
-              {otherCount > 0 ? <span className="text-muted"> · 기타 {otherCount}명</span> : null}
+              <span className="text-muted"> · 기타 {otherCount}명</span>
             </p>
           </div>
 
@@ -69,6 +95,23 @@ export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () =>
           ) : null}
 
           <CountdownBadge expireAt={room.expire_at} wide />
+
+          <section className="rounded-card bg-cream p-4">
+            <h3 className="text-sm font-black text-ink">대화 전문</h3>
+            <div className="mt-3 space-y-2">
+              {messagesLoading ? <p className="text-sm font-bold text-muted">불러오는 중...</p> : null}
+              {!messagesLoading && messages.length === 0 ? <p className="text-sm font-bold text-muted">아직 대화가 없습니다.</p> : null}
+              {messages.map((message) => (
+                <div key={message.id} className="rounded-xl bg-white px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate text-sm font-black text-mingle">{message.nickname}</span>
+                    <time className="shrink-0 text-xs font-bold text-muted">{new Date(message.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</time>
+                  </div>
+                  <p className="mt-1 whitespace-pre-wrap break-words text-[15px] font-bold leading-relaxed text-ink">{message.content}</p>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
 
         <div className="border-t border-blush px-5 py-4">

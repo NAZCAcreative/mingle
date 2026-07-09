@@ -49,7 +49,7 @@ export function RoomCard({ room }: { room: Room }) {
               <span className="text-[#3B82F6]">남자 {maleCount}명</span>
               {" · "}
               <span className="text-mingle">여자 {femaleCount}명</span>
-              {otherCount > 0 ? ` · 기타 ${otherCount}명` : null}
+              {` · 기타 ${otherCount}명`}
               {detailParts.length ? ` · ${detailParts.join(" · ")}` : null}
             </p>
           </div>

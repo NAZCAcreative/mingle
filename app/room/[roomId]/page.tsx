@@ -8,6 +8,7 @@ import { MessageInput } from "@/components/MessageInput";
 import { NicknameModal } from "@/components/NicknameModal";
 import { useCountdown } from "@/hooks/useCountdown";
 import { useMessages } from "@/hooks/useMessages";
+import { markJoinedRoomRead, saveJoinedRoom } from "@/hooks/useMyChatRooms";
 import { useNickname } from "@/hooks/useNickname";
 import { useRoom } from "@/hooks/useRoom";
 
@@ -40,6 +41,7 @@ export default function RoomPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ room_id: roomId, nickname: profile.nickname, gender: profile.gender })
         });
+        saveJoinedRoom(room);
         joinedNicknameRef.current = profile.nickname;
         await reload();
       }
@@ -47,6 +49,11 @@ export default function RoomPage() {
 
     void syncParticipant();
   }, [countdown.expired, profile.gender, profile.nickname, ready, reload, room, roomId]);
+
+  useEffect(() => {
+    if (!room || !ready) return;
+    markJoinedRoomRead(room, messages.at(-1)?.created_at);
+  }, [messages, ready, room]);
 
   if (loading) {
     return <main className="grid min-h-screen place-items-center px-6 font-black text-muted">채팅방을 불러오는 중이에요</main>;
@@ -67,6 +74,7 @@ export default function RoomPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ room_id: roomId, nickname: nextProfile.nickname, gender: nextProfile.gender })
     });
+    saveJoinedRoom(room);
     await reload();
   };
 

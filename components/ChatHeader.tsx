@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CountdownBadge } from "@/components/CountdownBadge";
 import { RoomEditModal } from "@/components/RoomEditModal";
+import { removeJoinedRoom } from "@/hooks/useMyChatRooms";
 import { categoryMeta } from "@/lib/constants";
 import type { Room } from "@/types/room";
 
@@ -50,6 +51,7 @@ export function ChatHeader({ room, nickname, onOwnerRegistered }: { room: Room; 
         body: JSON.stringify({ room_id: room.id, nickname })
       });
     }
+    removeJoinedRoom(room.id);
     router.push("/");
   };
 

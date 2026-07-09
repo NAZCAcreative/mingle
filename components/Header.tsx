@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Mascot } from "@/components/Mascot";
 import { NicknameModal } from "@/components/NicknameModal";
+import { useMyChatRooms } from "@/hooks/useMyChatRooms";
 import { useNickname } from "@/hooks/useNickname";
 import { themeOptions, useThemeMode } from "@/hooks/useThemeMode";
 
@@ -12,8 +13,10 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { theme, setTheme } = useThemeMode();
-  const { profile, setProfile } = useNickname();
+  const { displayName, profile, setProfile } = useNickname();
+  const { alerts, unreadTotal } = useMyChatRooms(displayName);
 
   return (
     <header className="sticky top-0 z-[1000] border-b border-blush bg-cream/95 backdrop-blur">
@@ -30,8 +33,24 @@ export function Header() {
         </Link>
 
         <div className="relative flex shrink-0 items-center gap-2">
-          <button className="grid h-11 w-11 place-items-center rounded-button bg-white text-mingle shadow-card" aria-label="알림" title="알림">
+          <button
+            type="button"
+            onClick={() => {
+              setNotificationsOpen((value) => !value);
+              setOpen(false);
+              setGuideOpen(false);
+              setProfileOpen(false);
+            }}
+            className="relative grid h-11 w-11 place-items-center rounded-button bg-white text-mingle shadow-card"
+            aria-label={unreadTotal > 0 ? `알림 ${unreadTotal}개` : "알림"}
+            title={unreadTotal > 0 ? `알림 ${unreadTotal}개` : "알림"}
+          >
             <Bell className="h-5 w-5" />
+            {unreadTotal > 0 ? (
+              <span className="absolute -right-1 -top-1 grid h-5 min-w-[20px] place-items-center rounded-full bg-success px-1 text-[11px] font-black text-white">
+                {unreadTotal > 99 ? "99+" : unreadTotal}
+              </span>
+            ) : null}
           </button>
           <button
             type="button"
@@ -39,6 +58,7 @@ export function Header() {
               setGuideOpen(true);
               setOpen(false);
               setProfileOpen(false);
+              setNotificationsOpen(false);
             }}
             className="grid h-11 w-11 place-items-center rounded-button bg-white text-mingle shadow-card"
             aria-label="이용 안내"
@@ -52,6 +72,7 @@ export function Header() {
               setProfileOpen(true);
               setOpen(false);
               setGuideOpen(false);
+              setNotificationsOpen(false);
             }}
             className="grid h-11 w-11 place-items-center rounded-button bg-white text-mingle shadow-card"
             aria-label={profile.nickname ? `닉네임 변경: ${profile.nickname}` : "닉네임 설정"}
@@ -64,6 +85,7 @@ export function Header() {
             onClick={() => {
               setOpen((value) => !value);
               setProfileOpen(false);
+              setNotificationsOpen(false);
             }}
             className="grid h-11 w-11 place-items-center rounded-button bg-mingle text-white shadow-soft"
             aria-label="컨셉 설정"
@@ -71,6 +93,45 @@ export function Header() {
           >
             <Palette className="h-5 w-5" />
           </button>
+
+          {notificationsOpen ? (
+            <div className="absolute right-0 top-[52px] z-40 w-72 overflow-hidden rounded-card border border-blush bg-white shadow-card">
+              <div className="border-b border-blush px-4 py-3">
+                <p className="text-sm font-black text-ink">내 대화</p>
+                <p className="mt-0.5 text-xs font-bold text-muted">
+                  {unreadTotal > 0 ? `새 메시지 ${unreadTotal}개` : "새 메시지가 없습니다"}
+                </p>
+              </div>
+              <div className="max-h-[360px] overflow-y-auto p-2">
+                {alerts.length === 0 ? (
+                  <p className="px-3 py-5 text-center text-sm font-bold text-muted">참여 중인 대화방이 없습니다.</p>
+                ) : (
+                  alerts.map((room) => (
+                    <Link
+                      key={room.id}
+                      href={`/room/${room.id}`}
+                      onClick={() => setNotificationsOpen(false)}
+                      className="block rounded-[14px] px-3 py-3 text-left hover:bg-blush"
+                    >
+                      <span className="flex items-start justify-between gap-2">
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[15px] font-black text-ink">{room.title}</span>
+                          <span className="mt-1 block truncate text-xs font-bold text-muted">
+                            {room.latestMessage ? `${room.latestMessage.nickname}: ${room.latestMessage.content}` : "아직 대화가 없습니다"}
+                          </span>
+                        </span>
+                        {room.unreadCount > 0 ? (
+                          <span className="grid h-6 min-w-6 shrink-0 place-items-center rounded-full bg-success px-1.5 text-xs font-black text-white">
+                            {room.unreadCount > 99 ? "99+" : room.unreadCount}
+                          </span>
+                        ) : null}
+                      </span>
+                    </Link>
+                  ))
+                )}
+              </div>
+            </div>
+          ) : null}
 
           {open ? (
             <div className="absolute right-0 top-[52px] z-40 w-56 overflow-hidden rounded-card border border-blush bg-white p-2 shadow-card">

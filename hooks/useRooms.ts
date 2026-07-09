@@ -48,7 +48,13 @@ export function useRooms() {
   }, [load]);
 
   useEffect(() => {
-    refreshFromSource({ showLoading: true });
+    const initialize = async () => {
+      await load({ showLoading: true });
+      if (document.visibilityState === "visible") void refreshFromSource();
+    };
+
+    void initialize();
+
     const intervalId = window.setInterval(() => {
       if (document.visibilityState === "visible") refreshFromSource();
     }, 10_000);
