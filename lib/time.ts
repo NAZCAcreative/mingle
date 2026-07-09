@@ -2,13 +2,25 @@ import { ROOM_TTL_HOURS } from "@/lib/constants";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FUTURE_DAY_COUNTDOWN_HOURS = 12;
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
 export function addRoomTtl(date = new Date()) {
   return new Date(date.getTime() + ROOM_TTL_HOURS * 60 * 60 * 1000);
 }
 
+// 한국 시간 기준 자정 (서버가 UTC여도 동일하게 동작)
 function startOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const kstMs = date.getTime() + KST_OFFSET_MS;
+  return new Date(Math.floor(kstMs / DAY_MS) * DAY_MS - KST_OFFSET_MS);
+}
+
+function kstParts(date: Date) {
+  const kst = new Date(date.getTime() + KST_OFFSET_MS);
+  return { year: kst.getUTCFullYear(), month: kst.getUTCMonth(), day: kst.getUTCDate() };
+}
+
+function kstDate(year: number, month: number, day: number) {
+  return new Date(Date.UTC(year, month, day) - KST_OFFSET_MS);
 }
 
 export function parseKoreanMeetingDate(value: string | null | undefined, base = new Date()): Date | null {
@@ -19,10 +31,11 @@ export function parseKoreanMeetingDate(value: string | null | undefined, base = 
     const month = Number(md[1]);
     const day = Number(md[2]);
     if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-      let date = new Date(base.getFullYear(), month - 1, day);
+      const baseYear = kstParts(base).year;
+      let date = kstDate(baseYear, month - 1, day);
       // 한 달 이상 지난 날짜면 내년 날짜로 해석
       if (date.getTime() < startOfDay(base).getTime() - 30 * DAY_MS) {
-        date = new Date(base.getFullYear() + 1, month - 1, day);
+        date = kstDate(baseYear + 1, month - 1, day);
       }
       return date;
     }
