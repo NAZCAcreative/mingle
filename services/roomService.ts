@@ -1,3 +1,4 @@
+import { ROOM_LIST_WINDOW_HOURS } from "@/lib/constants";
 import { addRoomTtl } from "@/lib/time";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { cleanRoomTitle } from "@/lib/title";
@@ -8,11 +9,13 @@ import type { Room } from "@/types/room";
 export async function listActiveRooms(): Promise<Room[]> {
   const supabase = getServerSupabase();
   if (!supabase) return listLocalActiveRooms();
+  const listSince = new Date(Date.now() - ROOM_LIST_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
     .from("rooms")
     .select("*")
     .neq("status", "expired")
     .gt("expire_at", new Date().toISOString())
+    .gte("created_at", listSince)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data ?? [];

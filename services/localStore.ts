@@ -1,3 +1,4 @@
+import { ROOM_LIST_WINDOW_HOURS } from "@/lib/constants";
 import { addRoomTtl } from "@/lib/time";
 import { cleanRoomTitle } from "@/lib/title";
 import type { AiAnalysis } from "@/types/ai";
@@ -32,8 +33,14 @@ state.ingestedIds ??= new Set<number>();
 
 export function listLocalActiveRooms() {
   const now = Date.now();
+  const listSince = now - ROOM_LIST_WINDOW_HOURS * 60 * 60 * 1000;
   return state.rooms
-    .filter((room) => room.status !== "expired" && new Date(room.expire_at).getTime() > now)
+    .filter(
+      (room) =>
+        room.status !== "expired" &&
+        new Date(room.expire_at).getTime() > now &&
+        new Date(room.created_at).getTime() >= listSince
+    )
     .map(withParticipantCounts)
     .sort(compareRoomsByCreatedAt);
 }

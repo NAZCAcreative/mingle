@@ -2,6 +2,8 @@ import type { Category } from "@/types/room";
 
 export const ROOM_TTL_HOURS = 6;
 
+export const ROOM_LIST_WINDOW_HOURS = 12;
+
 export const categoryMeta: Record<Category, { label: string; icon: string; tint: string; badge: string }> = {
   all: {
     label: "전체",
