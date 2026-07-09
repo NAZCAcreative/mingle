@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Gender, UserProfile } from "@/hooks/useNickname";
 
@@ -28,7 +29,20 @@ export function NicknameModal({ initialProfile, title, submitLabel = "입장", o
 
   return (
     <div className="rounded-card border border-blush bg-white p-4 shadow-card">
-      <p className="text-lg font-semibold text-ink">{title ?? "입장하려면 닉네임과 성별을 입력해 주세요"}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-lg font-semibold text-ink">{title ?? "입장하려면 닉네임과 성별을 입력해 주세요"}</p>
+        {onCancel ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blush text-mingle"
+            aria-label="닫기"
+            title="닫기"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        ) : null}
+      </div>
       <form
         className="mt-3 space-y-3"
         onSubmit={(event) => {

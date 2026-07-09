@@ -3,7 +3,7 @@ export function Mascot({ size = "md", variant = "logo" }: { size?: "sm" | "md" |
   const densityClass = variant === "banner" ? "retro-mark-banner" : "retro-mark-logo";
 
   return (
-    <div className={`${className} ${densityClass} retro-mark relative shrink-0 overflow-hidden rounded-full`} role="img" aria-label="mingle motion mark">
+    <div className={`${className} ${densityClass} retro-mark relative shrink-0 overflow-hidden rounded-full`} role="img" aria-label="교류방 motion mark">
       <span className="retro-mark__grid" />
       <span className="retro-mark__sun" />
       <span className="retro-mark__orbit retro-mark__orbit--outer" />

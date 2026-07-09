@@ -35,23 +35,25 @@ export function RoomCard({ room }: { room: Room }) {
       <button type="button" onClick={() => setPreviewOpen(true)} className="block w-full text-left" aria-label="방 정보 보기">
         <div className="grid grid-cols-[86px_1fr] gap-3">
           <div className={`grid h-[76px] w-[76px] place-items-center rounded-full ${meta.tint}`}>
-            <CategoryIcon category={room.category} className="h-10 w-10 text-mingle" />
+            <CategoryIcon category={room.category} className={`h-10 w-10 ${meta.iconColor}`} />
           </div>
           <div className="min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <span className={`flex h-[34px] items-center rounded-md px-2.5 text-[13px] font-semibold ${meta.badge}`}>{meta.label}</span>
-              <span className="flex h-[34px] shrink-0 items-center rounded-md border border-neutral-100 bg-neutral-50 px-2.5 text-[13px] font-semibold text-neutral-600">
+              <span className={`flex h-[34px] items-center rounded-md px-2.5 text-[14px] font-light ${meta.badge}`}>{meta.label}</span>
+              <span className="flex h-[34px] shrink-0 items-center rounded-md border border-neutral-100 bg-neutral-50 px-2.5 text-[14px] font-light text-neutral-600">
                 {formatChatAt(room.last_message_at)}
               </span>
             </div>
-            <h3 className="mt-2 line-clamp-2 text-[20px] font-semibold leading-snug text-ink">{room.title}</h3>
-            <p className="mt-2 line-clamp-1 text-[15px] font-medium text-muted">
+            <h3 className="mt-2 line-clamp-2 text-[20px] font-light leading-snug tracking-tight text-ink [font-family:var(--font-plex-kr)]">{room.title}</h3>
+            <p className="mt-2 line-clamp-1 text-[15px] font-light text-muted">
               <span className="text-[#3B82F6]">남자 {maleCount}명</span>
               {" · "}
-              <span className="text-mingle">여자 {femaleCount}명</span>
+              <span className="text-[#EC4899]">여자 {femaleCount}명</span>
               {` · 기타 ${otherCount}명`}
-              {detailParts.length ? ` · ${detailParts.join(" · ")}` : null}
             </p>
+            {detailParts.length ? (
+              <p className="mt-1 line-clamp-1 text-[15px] font-light text-muted">{detailParts.join(" · ")}</p>
+            ) : null}
           </div>
         </div>
       </button>
@@ -62,7 +64,7 @@ export function RoomCard({ room }: { room: Room }) {
         </div>
         <div className="shrink-0 text-right">
           <Link
-            className={`flex h-[56px] min-w-[116px] items-center justify-center gap-2 rounded-button px-4 text-[17px] font-semibold text-white shadow-soft ${
+            className={`font-cta flex h-[56px] min-w-[116px] items-center justify-center gap-2 rounded-button px-4 text-[17px] font-semibold text-white shadow-soft ${
               cta === "도와주기" ? "bg-mingle" : "bg-success"
             }`}
             href={href}

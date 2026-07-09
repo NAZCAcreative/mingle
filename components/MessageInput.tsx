@@ -18,8 +18,8 @@ export function MessageInput({ disabled, onSend }: { disabled: boolean; onSend: 
         setSending(false);
       }}
     >
-      <input disabled={disabled} value={value} onChange={(event) => setValue(event.target.value)} placeholder={disabled ? "닉네임 입력 후 대화할 수 있어요" : "메시지를 입력하세요"} className="h-[52px] min-w-0 flex-1 rounded-button border border-blush bg-white px-4 text-[16px] font-medium outline-none focus:border-mingle disabled:bg-neutral-100" />
-      <button disabled={disabled || sending} className="grid h-[52px] w-[52px] place-items-center rounded-button bg-mingle text-white disabled:bg-neutral-300">
+      <input disabled={disabled} value={value} onChange={(event) => setValue(event.target.value)} placeholder={disabled ? "닉네임 입력 후 대화할 수 있어요" : "메시지를 입력하세요"} className="h-[52px] min-w-0 flex-1 rounded-full border border-blush bg-white px-5 text-[16px] font-normal outline-none focus:border-mingle disabled:bg-neutral-100" />
+      <button disabled={disabled || sending} className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-mingle text-white shadow-soft disabled:bg-neutral-300">
         <Send className="h-6 w-6" />
       </button>
     </form>

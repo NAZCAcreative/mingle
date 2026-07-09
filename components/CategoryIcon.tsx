@@ -1,8 +1,8 @@
-import { BadgeDollarSign, Beer, BookOpen, Car, Coffee, Home, MapPin, MoreHorizontal, Sparkles, Waves } from "lucide-react";
+import { BadgeDollarSign, Beer, BookOpen, Car, Coffee, Home, LayoutGrid, MapPin, MoreHorizontal, Sparkles, Waves } from "lucide-react";
 import type { Category } from "@/types/room";
 
 const icons = {
-  all: Car,
+  all: LayoutGrid,
   taxi: Car,
   travel_swim: Waves,
   food_drink: Beer,
@@ -17,5 +17,5 @@ const icons = {
 
 export function CategoryIcon({ category, className }: { category: Category; className?: string }) {
   const Icon = icons[category] ?? MoreHorizontal;
-  return <Icon className={className} strokeWidth={2.2} />;
+  return <Icon className={className} strokeWidth={1.4} />;
 }

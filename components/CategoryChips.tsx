@@ -26,7 +26,7 @@ export function CategoryChips({ selected, onSelect }: { selected: Category; onSe
             <button
               key={category}
               onClick={() => onSelect(category)}
-              className={`flex h-[96px] min-w-[96px] snap-start flex-col items-center justify-center gap-2 rounded-[18px] border text-[16px] font-semibold shadow-card transition ${
+              className={`flex h-[96px] min-w-[96px] snap-start flex-col items-center justify-center gap-2 rounded-[18px] border text-[16px] font-normal shadow-card transition ${
                 active ? "border-blush bg-blush text-mingle" : "border-blush bg-white text-ink"
               }`}
             >

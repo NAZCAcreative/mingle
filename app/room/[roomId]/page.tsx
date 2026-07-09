@@ -1,8 +1,10 @@
 "use client";
 
+import { ChevronDown, Sparkles } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChatHeader } from "@/components/ChatHeader";
+import { LeaveRoomButton } from "@/components/LeaveRoomButton";
 import { MessageBubble } from "@/components/MessageBubble";
 import { MessageInput } from "@/components/MessageInput";
 import { NicknameModal } from "@/components/NicknameModal";
@@ -21,6 +23,7 @@ export default function RoomPage() {
   const countdown = useCountdown(room?.expire_at ?? new Date().toISOString());
   const joinedNicknameRef = useRef("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   useEffect(() => {
     if (!ready || !profile.gender || !room || countdown.expired || room.status === "expired") return;
@@ -84,23 +87,41 @@ export default function RoomPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col">
+    <main className="flex h-[calc(100dvh-69px)] flex-col overflow-hidden">
       <ChatHeader room={room} nickname={profile.nickname} onOwnerRegistered={reload} />
-      <section className="mx-4 mt-4 rounded-card border border-blush bg-white p-4 shadow-card">
-        <p className="text-sm font-semibold text-mingle">원본 대화에서 추출한 요약 정보</p>
-        <p className="mt-2 text-[15px] font-medium leading-relaxed text-ink">{room.summary}</p>
-        {detailItems.length ? (
-          <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-medium text-muted">
-            {detailItems.map((item) => (
-              <span key={item} className="rounded-xl bg-cream px-3 py-2">
-                {item}
-              </span>
-            ))}
+
+      <section className="border-b border-blush bg-white/85">
+        <button
+          type="button"
+          onClick={() => setSummaryOpen((value) => !value)}
+          className="flex h-11 w-full items-center justify-between px-4 text-sm text-mingle"
+          aria-expanded={summaryOpen}
+        >
+          <span className="flex items-center gap-1.5">
+            <Sparkles className="h-4 w-4" />
+            요약 정보
+          </span>
+          <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${summaryOpen ? "rotate-180" : ""}`} />
+        </button>
+        <div className={`grid transition-[grid-template-rows] duration-300 ease-out ${summaryOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+          <div className="overflow-hidden">
+            <div className="px-4 pb-4">
+              <p className="text-[15px] font-light leading-relaxed text-ink">{room.summary}</p>
+              {detailItems.length ? (
+                <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-light text-muted">
+                  {detailItems.map((item) => (
+                    <span key={item} className="rounded-xl bg-cream px-3 py-2">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </div>
-        ) : null}
+        </div>
       </section>
 
-      <section className="flex-1 space-y-3 px-4 py-4">
+      <section className="min-h-0 flex-1 space-y-2.5 overflow-y-auto bg-blush/30 px-4 py-4">
         {!ready && !expired && <NicknameModal onSave={saveProfile} />}
         {expired && <div className="rounded-card bg-white p-5 text-center font-semibold text-muted shadow-card">방이 종료되었습니다</div>}
         {messages.map((message) => (
@@ -116,6 +137,10 @@ export default function RoomPage() {
           await reload();
         }}
       />
+
+      <div className="flex justify-center border-t border-blush bg-cream pb-3 pt-2">
+        <LeaveRoomButton roomId={roomId} nickname={profile.nickname} />
+      </div>
     </main>
   );
 }

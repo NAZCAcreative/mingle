@@ -1,11 +1,9 @@
 "use client";
 
-import { Crown, LogOut, Pencil } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Crown, Pencil } from "lucide-react";
 import { useState } from "react";
 import { CountdownBadge } from "@/components/CountdownBadge";
 import { RoomEditModal } from "@/components/RoomEditModal";
-import { removeJoinedRoom } from "@/hooks/useMyChatRooms";
 import { categoryMeta } from "@/lib/constants";
 import type { Room } from "@/types/room";
 
@@ -14,9 +12,7 @@ function normalizeNickname(value: string) {
 }
 
 export function ChatHeader({ room, nickname, onOwnerRegistered }: { room: Room; nickname: string; onOwnerRegistered: () => Promise<void> }) {
-  const router = useRouter();
   const [registering, setRegistering] = useState(false);
-  const [leaving, setLeaving] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const meta = categoryMeta[room.category];
   const hasOwner = Boolean(room.owner_nickname);
@@ -40,28 +36,13 @@ export function ChatHeader({ room, nickname, onOwnerRegistered }: { room: Room; 
     await onOwnerRegistered();
   };
 
-  const leaveRoom = async () => {
-    if (leaving) return;
-    if (!window.confirm("방에서 나가시겠어요?")) return;
-    setLeaving(true);
-    if (nickname) {
-      await fetch("/api/rooms/leave", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ room_id: room.id, nickname })
-      });
-    }
-    removeJoinedRoom(room.id);
-    router.push("/");
-  };
-
   return (
-    <section className="border-b border-blush bg-cream/95 px-4 py-4">
+    <section className="shrink-0 border-b border-blush bg-cream/95 px-4 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold leading-tight text-ink">{room.title}</h1>
+          <h1 className="break-keep text-xl font-light leading-snug tracking-tight text-ink [font-family:var(--font-plex-kr)]">{room.title}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className={`rounded-md px-2 py-1 text-xs font-semibold ${meta.badge}`}>{meta.label}</span>
+            <span className={`rounded-md px-2 py-1 text-[13px] font-light ${meta.badge}`}>{meta.label}</span>
             {hasOwner ? (
               <span className="inline-flex items-center gap-1 rounded-md bg-blush px-2 py-1 text-xs font-semibold text-mingle">
                 <Crown className="h-3.5 w-3.5" />
@@ -90,8 +71,8 @@ export function ChatHeader({ room, nickname, onOwnerRegistered }: { room: Room; 
         </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-2">
-        {isOwner ? (
+      {isOwner ? (
+        <div className="mt-3 flex items-center gap-2">
           <button
             type="button"
             onClick={() => setEditOpen(true)}
@@ -100,17 +81,8 @@ export function ChatHeader({ room, nickname, onOwnerRegistered }: { room: Room; 
             <Pencil className="h-4 w-4" />
             방 정보 수정
           </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={leaveRoom}
-          disabled={leaving}
-          className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-button bg-white px-3 text-sm font-semibold text-muted shadow-card disabled:text-neutral-300"
-        >
-          <LogOut className="h-4 w-4" />
-          {leaving ? "나가는 중..." : "방 나가기"}
-        </button>
-      </div>
+        </div>
+      ) : null}
 
       {editOpen ? <RoomEditModal room={room} onClose={() => setEditOpen(false)} onSaved={onOwnerRegistered} /> : null}
     </section>
