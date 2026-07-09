@@ -20,7 +20,7 @@ type AdminOverview = {
   settings: Array<{ key: string; label: string; value: string }>;
 };
 
-const adminNickname = "나스큐";
+const fallbackAdmins = ["나스큐"];
 
 const menu = [
   "대시보드",
@@ -43,7 +43,21 @@ export default function AdminPage() {
   const [active, setActive] = useState(menu[0]);
   const [data, setData] = useState<AdminOverview | null>(null);
   const [loading, setLoading] = useState(false);
-  const isAdmin = profile.nickname.trim() === adminNickname;
+  const [adminNames, setAdminNames] = useState<string[]>(fallbackAdmins);
+  const isAdmin = adminNames.includes(profile.nickname.trim());
+
+  useEffect(() => {
+    const loadAdmins = async () => {
+      try {
+        const response = await fetch("/api/admin/admins", { cache: "no-store" });
+        const json = await response.json();
+        if (Array.isArray(json.admins) && json.admins.length) setAdminNames(json.admins);
+      } catch {
+        // 네트워크 실패 시 기본 관리자 목록 유지
+      }
+    };
+    void loadAdmins();
+  }, []);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -184,11 +198,66 @@ function buildSection(active: string, data: AdminOverview | null, onCloseRoom: (
   if (active === "생성 실패 로그") return <MiniTable rows={data.aiLogs.filter((log) => log.action === "skipped")} fields={["source_chat_id", "raw_message", "created_at"]} />;
   if (active === "방장 관리") return <MiniTable rows={data.rooms.filter((room) => room.owner_nickname)} fields={["title", "owner_nickname", "source_message_id"]} />;
   if (active === "채팅 모니터링") return <MiniTable rows={data.messages} fields={["nickname", "content", "room_id", "created_at"]} />;
-  if (active === "사용자/닉네임 관리") return <MiniTable rows={data.participants} fields={["nickname", "gender", "room_id", "updated_at"]} />;
+  if (active === "사용자/닉네임 관리") return <MiniTable rows={data.participants} fields={["nickname", "gender", "device_id", "room_id", "updated_at"]} />;
   if (active === "카테고리 관리") return <MiniTable rows={data.categories} fields={["label", "category", "rooms"]} />;
-  if (active === "운영 설정") return <MiniTable rows={data.settings} fields={["label", "value"]} />;
+  if (active === "운영 설정") return <SettingsEditor settings={data.settings} />;
 
   return <p className="mt-4 text-sm font-medium text-muted">배너/공지 DB 테이블을 연결하면 이 영역에서 관리합니다.</p>;
+}
+
+function SettingsEditor({ settings }: { settings: Array<{ key: string; label: string; value: string }> }) {
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [savedKey, setSavedKey] = useState<string | null>(null);
+
+  const save = async (key: string, fallback: string) => {
+    const value = values[key] ?? fallback;
+    setSavingKey(key);
+    try {
+      const response = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, value })
+      });
+      if (!response.ok) {
+        const json = await response.json().catch(() => ({}));
+        window.alert(`저장 실패: ${json.error ?? response.status}\napp_settings 테이블이 있는지 확인해 주세요.`);
+        return;
+      }
+      setSavedKey(key);
+      window.setTimeout(() => setSavedKey((current) => (current === key ? null : current)), 1500);
+    } finally {
+      setSavingKey(null);
+    }
+  };
+
+  return (
+    <div className="mt-4 space-y-2">
+      {settings.map((setting) => (
+        <div key={setting.key} className="rounded-xl border border-blush p-3">
+          <p className="text-sm font-medium text-muted">
+            {setting.label} <span className="text-xs text-muted/70">({setting.key})</span>
+          </p>
+          <div className="mt-2 flex gap-2">
+            <input
+              value={values[setting.key] ?? setting.value}
+              onChange={(event) => setValues((prev) => ({ ...prev, [setting.key]: event.target.value }))}
+              className="h-10 min-w-0 flex-1 rounded-button border border-blush bg-cream px-3 text-sm outline-none focus:border-mingle"
+              aria-label={`${setting.label} 값`}
+            />
+            <button
+              type="button"
+              onClick={() => void save(setting.key, setting.value)}
+              disabled={savingKey === setting.key}
+              className="h-10 shrink-0 rounded-button bg-mingle px-3 text-sm font-medium text-white disabled:bg-neutral-300"
+            >
+              {savingKey === setting.key ? "저장중" : savedKey === setting.key ? "저장됨" : "저장"}
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function MiniTable({
@@ -212,7 +281,7 @@ function MiniTable({
           {rows.slice(0, 50).map((row, index) => (
             <div key={index} className="border-b border-blush p-3 last:border-b-0">
               {fields.map((field) => (
-                <p key={field} className="grid grid-cols-[92px_1fr] gap-2 text-sm">
+                <p key={field} className="grid grid-cols-[92px_minmax(0,1fr)] gap-2 text-sm">
                   <span className="font-medium text-muted">{field}</span>
                   <span className="min-w-0 truncate text-ink">{String(row[field] ?? "-")}</span>
                 </p>

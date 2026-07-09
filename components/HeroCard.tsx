@@ -10,7 +10,7 @@ export function HeroCard() {
           <p className="text-[22px] font-light leading-tight tracking-tight text-ink [font-family:var(--font-plex-kr)]">
             카톡 대화를
             <br />
-            <span className="text-mingle">즉석 채팅방으로 만들어드려요.</span>
+            <span className="whitespace-nowrap text-[20px] text-mingle">즉석 채팅방으로 만들어드려요.</span>
           </p>
           <p className="mt-2 text-[14px] font-light text-neutral-700">대화가 없으면 방은 자동 종료 됩니다.</p>
         </div>

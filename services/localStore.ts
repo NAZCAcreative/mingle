@@ -154,10 +154,12 @@ export function listLocalMessages(roomId: string) {
 
 export function joinLocalRoom(roomId: string, nickname: string, gender: Gender) {
   if (!state.rooms.some((room) => room.id === roomId)) return null;
+  const isNewJoin = !(nickname in (state.participants[roomId] ?? {}));
   state.participants[roomId] = {
     ...(state.participants[roomId] ?? {}),
     [nickname]: gender
   };
+  if (isNewJoin) createLocalMessage(roomId, "SYSTEM", `${nickname}님이 입장했습니다`);
   return getLocalRoom(roomId);
 }
 

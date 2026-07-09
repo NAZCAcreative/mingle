@@ -13,6 +13,7 @@ import { useMessages } from "@/hooks/useMessages";
 import { markJoinedRoomRead, saveJoinedRoom } from "@/hooks/useMyChatRooms";
 import { useNickname } from "@/hooks/useNickname";
 import { useRoom } from "@/hooks/useRoom";
+import { getDeviceId } from "@/lib/deviceId";
 
 export default function RoomPage() {
   const params = useParams<{ roomId: string }>();
@@ -43,7 +44,7 @@ export default function RoomPage() {
         await fetch("/api/rooms/join", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ room_id: roomId, nickname: profile.nickname, gender: profile.gender })
+          body: JSON.stringify({ room_id: roomId, nickname: profile.nickname, gender: profile.gender, device_id: getDeviceId() })
         });
         saveJoinedRoom(room);
         joinedNicknameRef.current = profile.nickname;
@@ -80,7 +81,7 @@ export default function RoomPage() {
     await fetch("/api/rooms/join", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ room_id: roomId, nickname: nextProfile.nickname, gender: nextProfile.gender })
+      body: JSON.stringify({ room_id: roomId, nickname: nextProfile.nickname, gender: nextProfile.gender, device_id: getDeviceId() })
     });
     saveJoinedRoom(room);
     await reload();

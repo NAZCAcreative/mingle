@@ -48,8 +48,14 @@ type ParticipantRow = {
   room_id: string;
   nickname: string;
   gender: "male" | "female" | "other";
+  device_id?: string | null;
   joined_at: string | null;
   updated_at: string | null;
+};
+
+type SettingRow = {
+  key: string;
+  value: string | null;
 };
 
 export async function GET() {
@@ -72,12 +78,13 @@ export async function GET() {
     });
   }
 
-  const [roomsResult, chatsResult, aiLogsResult, messagesResult, participantsResult] = await Promise.all([
+  const [roomsResult, chatsResult, aiLogsResult, messagesResult, participantsResult, settingsResult] = await Promise.all([
     supabase.from("rooms").select("*").order("created_at", { ascending: false }).limit(500),
     supabase.from("ingested_chats").select("id,sender,content,created_at,processed_at").order("id", { ascending: false }).limit(300),
     supabase.from("ai_logs").select("id,source_chat_id,raw_message,action,room_id,created_at").order("created_at", { ascending: false }).limit(300),
     supabase.from("messages").select("id,room_id,nickname,content,created_at").order("created_at", { ascending: false }).limit(300),
-    supabase.from("room_participants").select("room_id,nickname,gender,joined_at,updated_at").order("updated_at", { ascending: false }).limit(500)
+    supabase.from("room_participants").select("*").order("updated_at", { ascending: false }).limit(500),
+    supabase.from("app_settings").select("key,value")
   ]);
 
   const rooms = readRows<RoomRow>(roomsResult);
@@ -85,6 +92,9 @@ export async function GET() {
   const aiLogs = readRows<AiLogRow>(aiLogsResult);
   const messages = readRows<MessageRow>(messagesResult);
   const participants = readRows<ParticipantRow>(participantsResult);
+  const settingOverrides = new Map(
+    readRows<SettingRow>(settingsResult).map((row) => [row.key, row.value ?? ""])
+  );
   const now = Date.now();
   const closingWindowMs = 30 * 60 * 1000;
   const closingRooms = rooms.filter((room) => {
@@ -115,7 +125,10 @@ export async function GET() {
     messages,
     participants,
     categories: categoryStats(rooms),
-    settings: defaultSettings()
+    settings: defaultSettings().map((setting) => ({
+      ...setting,
+      value: settingOverrides.get(setting.key) ?? setting.value
+    }))
   });
 }
 
@@ -147,7 +160,7 @@ function defaultSettings() {
   return [
     { key: "room_ttl_hours", label: "방 유지 시간", value: "6시간" },
     { key: "closing_window", label: "폭파 임박 기준", value: "30분" },
-    { key: "admin_nickname", label: "관리자 닉네임", value: "나스큐" }
+    { key: "admin_nicknames", label: "관리자 닉네임(쉼표로 추가)", value: "나스큐" }
   ];
 }
 

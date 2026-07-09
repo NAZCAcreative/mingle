@@ -2,6 +2,7 @@ import { ROOM_LIST_WINDOW_HOURS, ROOM_TTL_HOURS } from "@/lib/constants";
 import { findMergeCandidate } from "@/lib/matcher";
 import { addRoomTtl, parseKoreanSentAtText } from "@/lib/time";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { createMessage } from "@/services/messageService";
 import { cleanRoomTitle } from "@/lib/title";
 import {
   getLocalRoom,
@@ -130,20 +131,48 @@ export async function upsertRoomFromAnalysis(
   return data as Room;
 }
 
-export async function joinRoom(roomId: string, nickname: string, gender: Gender) {
+export async function joinRoom(roomId: string, nickname: string, gender: Gender, deviceId?: string) {
   const supabase = getServerSupabase();
   if (!supabase) return joinLocalRoom(roomId, nickname, gender);
 
-  const { error } = await supabase.from("room_participants").upsert(
-    {
-      room_id: roomId,
-      nickname,
-      gender,
-      updated_at: new Date().toISOString()
-    },
-    { onConflict: "room_id,nickname" }
-  );
-  if (error) return getRoom(roomId);
+  const timestamp = new Date().toISOString();
+  const base: Record<string, string> = {
+    room_id: roomId,
+    nickname,
+    gender,
+    updated_at: timestamp
+  };
+  const withDevice: Record<string, string> = deviceId ? { ...base, device_id: deviceId } : base;
+
+  const { data: existing } = await supabase
+    .from("room_participants")
+    .select("nickname")
+    .eq("room_id", roomId)
+    .eq("nickname", nickname)
+    .maybeSingle();
+
+  let { error } = await supabase.from("room_participants").upsert(withDevice, { onConflict: "room_id,nickname" });
+  if (error && deviceId) {
+    // device_id column may not exist yet; retry without it
+    ({ error } = await supabase.from("room_participants").upsert(base, { onConflict: "room_id,nickname" }));
+  }
+  if (error) {
+    // upsert needs a (room_id, nickname) unique constraint; fall back to manual write
+    if (existing) {
+      await supabase.from("room_participants").update({ gender, updated_at: timestamp }).eq("room_id", roomId).eq("nickname", nickname);
+    } else {
+      const inserted = await supabase.from("room_participants").insert(withDevice);
+      if (inserted.error && deviceId) await supabase.from("room_participants").insert(base);
+    }
+  }
+
+  if (!existing) {
+    try {
+      await createMessage(roomId, "SYSTEM", `${nickname}님이 입장했습니다`);
+    } catch {
+      // 입장 메시지는 실패해도 참여 자체를 막지 않는다
+    }
+  }
 
   return getRoom(roomId);
 }

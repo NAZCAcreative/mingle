@@ -33,18 +33,18 @@ export function RoomCard({ room }: { room: Room }) {
   return (
     <article className="rounded-card border border-blush bg-white p-4 shadow-card">
       <button type="button" onClick={() => setPreviewOpen(true)} className="block w-full text-left" aria-label="방 정보 보기">
-        <div className="grid grid-cols-[86px_1fr] gap-3">
+        <div className="flex items-start justify-between gap-2">
+          <span className={`flex h-[34px] items-center rounded-md px-2.5 text-[14px] font-light ${meta.badge}`}>{meta.label}</span>
+          <span className="flex h-[34px] shrink-0 items-center rounded-md border border-neutral-100 bg-neutral-50 px-2.5 text-[14px] font-light text-neutral-600">
+            {formatChatAt(room.last_message_at)}
+          </span>
+        </div>
+        <div className="mt-2 grid grid-cols-[86px_1fr] gap-3">
           <div className={`grid h-[76px] w-[76px] place-items-center rounded-full ${meta.tint}`}>
             <CategoryIcon category={room.category} className={`h-10 w-10 ${meta.iconColor}`} />
           </div>
           <div className="min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <span className={`flex h-[34px] items-center rounded-md px-2.5 text-[14px] font-light ${meta.badge}`}>{meta.label}</span>
-              <span className="flex h-[34px] shrink-0 items-center rounded-md border border-neutral-100 bg-neutral-50 px-2.5 text-[14px] font-light text-neutral-600">
-                {formatChatAt(room.last_message_at)}
-              </span>
-            </div>
-            <h3 className="mt-2 line-clamp-2 text-[20px] font-light leading-snug tracking-tight text-ink [font-family:var(--font-plex-kr)]">{room.title}</h3>
+            <h3 className="line-clamp-2 text-[20px] font-light leading-snug tracking-tight text-ink [font-family:var(--font-plex-kr)]">{room.title}</h3>
             <p className="mt-2 line-clamp-1 text-[15px] font-light text-muted">
               <span className="text-[#3B82F6]">남자 {maleCount}명</span>
               {" · "}

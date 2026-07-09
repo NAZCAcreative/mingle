@@ -8,11 +8,12 @@ export async function POST(request: NextRequest) {
   const roomId = String(body.room_id ?? "");
   const nickname = String(body.nickname ?? "").trim();
   const gender = String(body.gender ?? "");
+  const deviceId = typeof body.device_id === "string" ? body.device_id.slice(0, 64) : "";
 
   if (!roomId || !nickname || !genders.has(gender)) {
     return NextResponse.json({ error: "room_id, nickname, gender are required" }, { status: 400 });
   }
 
-  const room = await joinRoom(roomId, nickname, gender as "male" | "female" | "other");
+  const room = await joinRoom(roomId, nickname, gender as "male" | "female" | "other", deviceId);
   return NextResponse.json({ room });
 }

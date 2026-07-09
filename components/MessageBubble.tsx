@@ -1,6 +1,14 @@
 import type { Message } from "@/types/message";
 
 export function MessageBubble({ message, mine }: { message: Message; mine: boolean }) {
+  if (message.nickname === "SYSTEM") {
+    return (
+      <div className="flex justify-center">
+        <span className="rounded-full bg-ink/10 px-3 py-1 text-xs font-light text-muted">{message.content}</span>
+      </div>
+    );
+  }
+
   const time = new Date(message.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
   return (
     <div className={`flex items-end gap-1.5 ${mine ? "justify-end" : "justify-start"}`}>
