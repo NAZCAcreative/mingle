@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { CategoryChips } from "@/components/CategoryChips";
 import { EmptyState } from "@/components/EmptyState";
 import { HeroCard } from "@/components/HeroCard";
+import { Mascot } from "@/components/Mascot";
 import { RoomList } from "@/components/RoomList";
 import { SortMenu } from "@/components/SortMenu";
 import { useRooms } from "@/hooks/useRooms";
@@ -103,7 +104,7 @@ export default function HomePage() {
       <HeroCard />
 
       <aside className="mx-4 mt-4 flex items-center gap-3 rounded-card bg-gradient-to-r from-blush to-white px-4 py-3 shadow-card">
-        <img src="/img/mingu03.PNG" alt="" className="h-12 w-12 shrink-0 object-contain" />
+        <Mascot size="sm" />
         <div className="min-w-0">
           <p className="font-black text-mingle">방은 6시간 동안 대화가 없으면 자동으로 정리됩니다</p>
         </div>

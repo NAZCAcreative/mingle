@@ -133,10 +133,7 @@ export async function joinRoom(roomId: string, nickname: string, gender: Gender)
     },
     { onConflict: "room_id,nickname" }
   );
-  if (error) {
-    if (isMissingParticipantTable(error)) return getRoom(roomId);
-    throw error;
-  }
+  if (error) return getRoom(roomId);
 
   return getRoom(roomId);
 }
@@ -146,10 +143,7 @@ export async function leaveRoom(roomId: string, nickname: string) {
   if (!supabase) return leaveLocalRoom(roomId, nickname);
 
   const { error } = await supabase.from("room_participants").delete().eq("room_id", roomId).eq("nickname", nickname);
-  if (error) {
-    if (isMissingParticipantTable(error)) return getRoom(roomId);
-    throw error;
-  }
+  if (error) return getRoom(roomId);
 
   return getRoom(roomId);
 }
@@ -220,10 +214,7 @@ async function withParticipantCounts(rooms: Room[]): Promise<Room[]> {
 
   const roomIds = rooms.map((room) => room.id);
   const { data, error } = await supabase.from("room_participants").select("room_id, gender").in("room_id", roomIds);
-  if (error) {
-    if (isMissingParticipantTable(error)) return rooms;
-    throw error;
-  }
+  if (error) return rooms;
 
   const countsByRoom = new Map<string, { male: number; female: number; other: number }>();
   for (const participant of data ?? []) {
@@ -245,8 +236,4 @@ async function withParticipantCounts(rooms: Room[]): Promise<Room[]> {
       gender_counts: counts
     };
   });
-}
-
-function isMissingParticipantTable(error: { code?: string; message?: string }) {
-  return error.code === "42P01" || error.message?.includes("room_participants");
 }
