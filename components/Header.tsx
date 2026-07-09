@@ -41,7 +41,6 @@ export function Header() {
           <Mascot size="sm" />
           <div className="min-w-0">
             <h1 className="text-[30px] font-black leading-none tracking-normal text-mingle">mingle</h1>
-            <p className="mt-1 truncate text-[13px] font-bold text-muted">대화가 모임이 되는 순간</p>
           </div>
         </Link>
 

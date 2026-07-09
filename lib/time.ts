@@ -42,11 +42,11 @@ export function formatChatAt(value: string | Date) {
     hour12: false
   }).format(date);
 
-  if (sameDate) return `채팅 ${time}`;
+  if (sameDate) return `생성 ${time}`;
 
   const day = new Intl.DateTimeFormat("ko-KR", {
     month: "numeric",
     day: "numeric"
   }).format(date);
-  return `채팅 ${day} ${time}`;
+  return `생성 ${day} ${time}`;
 }
