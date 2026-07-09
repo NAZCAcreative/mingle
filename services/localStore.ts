@@ -83,7 +83,8 @@ export function upsertLocalRoomFromAnalysis(
   analysis: AiAnalysis,
   sourceMessageId?: string,
   kakaoSender?: string | null,
-  baseTime?: Date
+  baseTime?: Date,
+  rawContent?: string | null
 ) {
   if (!analysis.is_actionable || analysis.type === "ignore") return null;
 
@@ -113,9 +114,9 @@ export function upsertLocalRoomFromAnalysis(
 
   const room: Room = {
     id: `local-${sourceMessageId ?? crypto.randomUUID()}`,
-    title: cleanRoomTitle(analysis.title),
+    title: cleanRoomTitle(rawContent?.trim() || analysis.title),
     category: analysis.category,
-    summary: analysis.summary,
+    summary: rawContent?.trim() || analysis.summary,
     origin: analysis.origin,
     destination: analysis.destination,
     meeting_time_text: analysis.meeting_time_text,

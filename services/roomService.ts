@@ -70,7 +70,8 @@ export async function upsertRoomFromAnalysis(
   analysis: AiAnalysis,
   sourceMessageId?: string,
   kakaoSender?: string | null,
-  sourceCreatedAt?: string | null
+  sourceCreatedAt?: string | null,
+  rawContent?: string | null
 ) {
   const supabase = getServerSupabase();
   if (!analysis.is_actionable || analysis.type === "ignore") return null;
@@ -81,7 +82,7 @@ export async function upsertRoomFromAnalysis(
   const expireAt = computeRoomExpireAt(baseTime, analysis.meeting_time_text);
   if (expireAt.getTime() <= Date.now()) return null;
 
-  if (!supabase) return upsertLocalRoomFromAnalysis(analysis, sourceMessageId, kakaoSender, baseTime);
+  if (!supabase) return upsertLocalRoomFromAnalysis(analysis, sourceMessageId, kakaoSender, baseTime, rawContent);
 
   // 같은 목적의 방이 이미 있으면 새로 만들지 않고 기존 방을 갱신한다.
   const activeRooms = await listActiveRooms();
@@ -108,9 +109,9 @@ export async function upsertRoomFromAnalysis(
   const { data, error } = await supabase
     .from("rooms")
     .insert({
-      title: cleanRoomTitle(analysis.title),
+      title: cleanRoomTitle(rawContent?.trim() || analysis.title),
       category: analysis.category,
-      summary: analysis.summary,
+      summary: rawContent?.trim() || analysis.summary,
       origin: analysis.origin,
       destination: analysis.destination,
       meeting_time_text: analysis.meeting_time_text,

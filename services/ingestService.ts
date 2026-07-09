@@ -64,7 +64,8 @@ export async function ingestChats() {
       analysis,
       String(id),
       chat.sender ? String(chat.sender).trim() : null,
-      chatCreatedAt
+      chatCreatedAt,
+      content
     );
     const action = !analysis.is_actionable || analysis.type === "ignore" ? "ignored" : room ? "upserted" : "skipped";
 
