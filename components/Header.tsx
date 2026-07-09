@@ -1,11 +1,11 @@
 "use client";
 
-import { Bell, Check, HelpCircle, Palette, UserRound, X } from "lucide-react";
+import { Bell, Check, HelpCircle, LogOut, Palette, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Mascot } from "@/components/Mascot";
 import { NicknameModal } from "@/components/NicknameModal";
-import { useMyChatRooms } from "@/hooks/useMyChatRooms";
+import { removeJoinedRoom, useMyChatRooms } from "@/hooks/useMyChatRooms";
 import { useNickname } from "@/hooks/useNickname";
 import { themeOptions, useThemeMode } from "@/hooks/useThemeMode";
 
@@ -16,7 +16,20 @@ export function Header() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { theme, setTheme } = useThemeMode();
   const { displayName, profile, setProfile } = useNickname();
-  const { alerts, unreadTotal } = useMyChatRooms(displayName);
+  const { alerts, unreadTotal, refreshAlerts } = useMyChatRooms(displayName);
+
+  const leaveJoinedRoom = async (roomId: string) => {
+    if (!profile.nickname) return;
+    if (!window.confirm("방에서 나가시겠어요?")) return;
+
+    await fetch("/api/rooms/leave", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ room_id: roomId, nickname: profile.nickname })
+    });
+    removeJoinedRoom(roomId);
+    await refreshAlerts();
+  };
 
   return (
     <header className="sticky top-0 z-[1000] border-b border-blush bg-cream/95 backdrop-blur">
@@ -99,7 +112,7 @@ export function Header() {
               <div className="border-b border-blush px-4 py-3">
                 <p className="text-sm font-black text-ink">내 대화</p>
                 <p className="mt-0.5 text-xs font-bold text-muted">
-                  {unreadTotal > 0 ? `새 메시지 ${unreadTotal}개` : "새 메시지가 없습니다"}
+                  참여 중인 방 {alerts.length}개{unreadTotal > 0 ? ` · 새 메시지 ${unreadTotal}개` : ""}
                 </p>
               </div>
               <div className="max-h-[360px] overflow-y-auto p-2">
@@ -107,26 +120,31 @@ export function Header() {
                   <p className="px-3 py-5 text-center text-sm font-bold text-muted">참여 중인 대화방이 없습니다.</p>
                 ) : (
                   alerts.map((room) => (
-                    <Link
-                      key={room.id}
-                      href={`/room/${room.id}`}
-                      onClick={() => setNotificationsOpen(false)}
-                      className="block rounded-[14px] px-3 py-3 text-left hover:bg-blush"
-                    >
-                      <span className="flex items-start justify-between gap-2">
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[15px] font-black text-ink">{room.title}</span>
-                          <span className="mt-1 block truncate text-xs font-bold text-muted">
-                            {room.latestMessage ? `${room.latestMessage.nickname}: ${room.latestMessage.content}` : "아직 대화가 없습니다"}
+                    <div key={room.id} className="rounded-[14px] px-3 py-3 hover:bg-blush">
+                      <Link href={`/room/${room.id}`} onClick={() => setNotificationsOpen(false)} className="block text-left">
+                        <span className="flex items-start justify-between gap-2">
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[15px] font-black text-ink">{room.title}</span>
+                            <span className="mt-1 block truncate text-xs font-bold text-muted">
+                              {room.latestMessage ? `${room.latestMessage.nickname}: ${room.latestMessage.content}` : "아직 대화가 없습니다"}
+                            </span>
                           </span>
+                          {room.unreadCount > 0 ? (
+                            <span className="grid h-6 min-w-6 shrink-0 place-items-center rounded-full bg-success px-1.5 text-xs font-black text-white">
+                              {room.unreadCount > 99 ? "99+" : room.unreadCount}
+                            </span>
+                          ) : null}
                         </span>
-                        {room.unreadCount > 0 ? (
-                          <span className="grid h-6 min-w-6 shrink-0 place-items-center rounded-full bg-success px-1.5 text-xs font-black text-white">
-                            {room.unreadCount > 99 ? "99+" : room.unreadCount}
-                          </span>
-                        ) : null}
-                      </span>
-                    </Link>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => void leaveJoinedRoom(room.id)}
+                        className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-button bg-white px-2.5 text-xs font-black text-muted shadow-card"
+                      >
+                        <LogOut className="h-3.5 w-3.5" />
+                        방 나가기
+                      </button>
+                    </div>
                   ))
                 )}
               </div>
