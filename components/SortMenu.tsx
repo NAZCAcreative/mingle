@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDownWideNarrow, Check, Flame, Timer, UsersRound } from "lucide-react";
+import { ArrowDownWideNarrow, Check, Flame, MessageCircle, Timer, UsersRound } from "lucide-react";
 import { useState } from "react";
 import type { RoomSortMode } from "@/hooks/useRooms";
 
@@ -10,6 +10,7 @@ const sortOptions: Array<{
   icon: typeof Flame;
 }> = [
   { value: "latest", label: "최신순", icon: Flame },
+  { value: "active", label: "활발한 대화순", icon: MessageCircle },
   { value: "closing", label: "마감 임박순", icon: Timer },
   { value: "popular", label: "인원 많은순", icon: UsersRound }
 ];

@@ -5,7 +5,7 @@ import { getBrowserSupabase } from "@/lib/supabase/client";
 import type { Category } from "@/types/room";
 import type { Room } from "@/types/room";
 
-export type RoomSortMode = "latest" | "closing" | "popular";
+export type RoomSortMode = "latest" | "active" | "closing" | "popular";
 
 type LoadOptions = {
   showLoading?: boolean;
@@ -100,6 +100,12 @@ function compareRooms(a: Room, b: Room, sortMode: RoomSortMode) {
     if (peopleDiff !== 0) return peopleDiff;
     const maxDiff = (b.max_people ?? 0) - (a.max_people ?? 0);
     if (maxDiff !== 0) return maxDiff;
+    return compareBySourceMessage(a, b);
+  }
+
+  if (sortMode === "active") {
+    const activeDiff = new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime();
+    if (activeDiff !== 0) return activeDiff;
     return compareBySourceMessage(a, b);
   }
 
