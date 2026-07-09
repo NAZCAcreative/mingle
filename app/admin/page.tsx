@@ -3,6 +3,7 @@
 import { Database, MessageSquare, Settings, ShieldCheck, Users } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { NicknameModal } from "@/components/NicknameModal";
+import { CafeteriaSettingsPanel } from "@/components/CafeteriaSettingsPanel";
 import { useNickname } from "@/hooks/useNickname";
 
 type AdminOverview = {
@@ -252,6 +253,7 @@ function buildSection(
     return (
       <div className="mt-4 space-y-4">
         <AdminNicknameManager admins={adminNames} actor={actor} onAdminsChange={onAdminsChange} />
+        <CafeteriaSettingsPanel actor={actor} />
         <SettingsEditor settings={data.settings} />
       </div>
     );

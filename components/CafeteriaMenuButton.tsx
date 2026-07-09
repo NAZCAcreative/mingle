@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2, Soup, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Meal = {
   label: string;
@@ -23,10 +23,18 @@ type CafeteriaResponse = {
 };
 
 export function CafeteriaMenuButton() {
+  const [enabled, setEnabled] = useState<boolean | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<CafeteriaResponse | null>(null);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/cafeteria/config", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((json) => setEnabled(json.enabled === true))
+      .catch(() => setEnabled(false));
+  }, []);
 
   const openMenu = async () => {
     setOpen(true);
@@ -44,6 +52,8 @@ export function CafeteriaMenuButton() {
       setLoading(false);
     }
   };
+
+  if (!enabled) return null;
 
   return (
     <>
@@ -95,14 +105,14 @@ export function CafeteriaMenuButton() {
                     <section key={menu.name} className="rounded-card border border-blush bg-cream/60 p-3">
                       <div className="flex items-center justify-between gap-2">
                         <h3 className="min-w-0 truncate text-[16px] font-semibold text-ink">{menu.name}</h3>
-                        <a
+                        {menu.sourceUrl ? <a
                           href={menu.sourceUrl}
                           target="_blank"
                           rel="noreferrer"
                           className="shrink-0 text-xs font-medium text-mingle underline underline-offset-2"
                         >
                           원문
-                        </a>
+                        </a> : null}
                       </div>
 
                       {menu.error ? (

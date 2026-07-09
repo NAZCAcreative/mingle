@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCafeteriaSettings } from "@/lib/cafeteria";
 
 const cafeteriaPages = [
   { name: "백두관", url: "https://cms.jejunu.ac.kr/camp/stud/foodmenu/firstfixmenu.htm" },
@@ -23,6 +24,20 @@ export type CafeteriaMenu = {
 
 export async function GET() {
   const today = todayKst();
+  const settings = await getCafeteriaSettings();
+
+  if (!settings.enabled) {
+    return NextResponse.json({ date: today.label, menus: [], source: "Jeju National University cafeteria menu", disabled: true });
+  }
+
+  if (settings.manualMenu?.date === today.isoDate) {
+    return NextResponse.json({
+      date: today.label,
+      menus: [{ ...settings.manualMenu, sourceUrl: "" }],
+      source: "Manual menu"
+    });
+  }
+
   const menus = await Promise.all(cafeteriaPages.map((page) => loadCafeteria(page, today)));
 
   return NextResponse.json({
@@ -115,10 +130,12 @@ function decodeHtml(value: string) {
 function todayKst() {
   const parts = new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul",
+    year: "numeric",
     month: "2-digit",
     day: "2-digit"
   }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
   const month = parts.find((part) => part.type === "month")?.value ?? "01";
   const day = parts.find((part) => part.type === "day")?.value ?? "01";
-  return { key: `${month}/${day}`, label: `${month}/${day}` };
+  return { key: `${month}/${day}`, label: `${month}/${day}`, isoDate: `${year}-${month}-${day}` };
 }
