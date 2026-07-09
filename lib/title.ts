@@ -1,6 +1,7 @@
 export function cleanRoomTitle(title: string) {
   const cleaned = title
-    .replace(/\s*(?:https?:\/\/)?open\.kakao\.com\/o\/[A-Za-z0-9_-]+.*$/i, "")
+    .replace(/(?:https?:\/\/)?open\.kakao\.com\/o\/[A-Za-z0-9_-]+/gi, "")
+    .replace(/\s{2,}/g, " ")
     .replace(/[\s|,/-]+$/g, "")
     .trim();
 

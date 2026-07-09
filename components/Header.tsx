@@ -12,8 +12,11 @@ export function Header() {
   const { theme, setTheme } = useThemeMode();
 
   return (
-    <header className="sticky top-0 z-[1000] border-b border-blush bg-cream/95 px-4 py-3 backdrop-blur">
-      <nav className="flex items-center justify-between gap-3">
+    <header className="sticky top-0 z-[1000] border-b border-blush bg-cream/95 backdrop-blur">
+      <div className="flex h-8 items-center justify-center bg-mingle px-4 text-[13px] font-black text-white">
+        제주대학교 학점교류방 전용
+      </div>
+      <nav className="flex items-center justify-between gap-3 px-4 py-3">
         <Link href="/" className="flex min-w-0 items-center gap-2" aria-label="홈으로 이동">
           <Mascot size="sm" />
           <div className="min-w-0">
