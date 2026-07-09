@@ -40,7 +40,16 @@ export async function listActiveRooms(): Promise<Room[]> {
     .order("created_at", { ascending: false });
   if (error) throw error;
   const rooms = await withSourceChatTimes(data ?? []);
-  return withParticipantCounts(rooms);
+  const counted = await withParticipantCounts(rooms);
+  return counted.sort(compareBySourceIdDesc);
+}
+
+// 수집된 원본 글 번호 기준 최신순 (병합으로 생성시각이 뒤섞여도 최신 글이 위로)
+function compareBySourceIdDesc(a: Room, b: Room) {
+  const aId = Number(a.source_message_id);
+  const bId = Number(b.source_message_id);
+  if (Number.isFinite(aId) && Number.isFinite(bId) && aId !== bId) return bId - aId;
+  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
 }
 
 export async function getRoom(roomId: string): Promise<Room | null> {
