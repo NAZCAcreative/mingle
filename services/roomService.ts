@@ -78,6 +78,7 @@ export async function upsertRoomFromAnalysis(
         current_people: Math.max(candidate.current_people, analysis.current_people || 0),
         max_people: analysis.max_people || candidate.max_people,
         keywords: Array.from(new Set([...(candidate.keywords ?? []), ...(analysis.keywords ?? [])])),
+        source_message_id: sourceMessageId,
         last_message_at: baseTime.toISOString(),
         expire_at: addRoomTtl(baseTime).toISOString(),
         updated_at: new Date().toISOString()

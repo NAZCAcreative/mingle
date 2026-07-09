@@ -16,19 +16,24 @@ type SourceChat = {
   [key: string]: unknown;
 };
 
+const INGEST_BATCH_SIZE = 60;
+
 export async function ingestChats() {
   const supabase = getServerSupabase();
   const { data: latest } = supabase
     ? await supabase.from("ingested_chats").select("id").order("id", { ascending: false }).limit(1).maybeSingle()
     : { data: null };
   const baseUrl = process.env.CHAT_SOURCE_URL || "https://dm.kggstudio.com/chats";
-  const afterId = latest?.id ?? latestLocalIngestedId() ?? (await resolveLatestWindowAfterId(baseUrl));
+  const storedAfterId = latest?.id ?? latestLocalIngestedId();
+  const latestWindowAfterId = await resolveLatestWindowAfterId(baseUrl);
+  const afterId = storedAfterId ? Math.max(storedAfterId, latestWindowAfterId) : latestWindowAfterId;
   const response = await fetchChatsAfter(baseUrl, afterId);
 
   if (!response.ok) throw new Error(`chat source failed: ${response.status}`);
 
   const payload = await response.json();
-  const chats: SourceChat[] = Array.isArray(payload) ? payload : payload.items ?? payload.chats ?? payload.data ?? [];
+  const receivedChats: SourceChat[] = Array.isArray(payload) ? payload : payload.items ?? payload.chats ?? payload.data ?? [];
+  const chats = receivedChats.slice(0, INGEST_BATCH_SIZE);
   let processed = 0;
   let upserted = 0;
   let ignored = 0;
@@ -78,7 +83,7 @@ export async function ingestChats() {
     processed += 1;
   }
 
-  return { ok: true, processed, upserted, ignored, after_id: afterId, received: chats.length };
+  return { ok: true, processed, upserted, ignored, after_id: afterId, received: receivedChats.length, selected: chats.length };
 }
 
 function resolveChatCreatedAt(chat: SourceChat) {

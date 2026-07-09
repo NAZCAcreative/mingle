@@ -106,12 +106,23 @@ function compareRooms(a: Room, b: Room, sortMode: RoomSortMode) {
     if (peopleDiff !== 0) return peopleDiff;
     const maxDiff = (b.max_people ?? 0) - (a.max_people ?? 0);
     if (maxDiff !== 0) return maxDiff;
-    return compareByCreatedAt(a, b);
+    return compareBySourceMessage(a, b);
   }
 
-  return compareByCreatedAt(a, b);
+  return compareBySourceMessage(a, b);
 }
 
 function compareByCreatedAt(a: Room, b: Room) {
   return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+}
+
+function compareBySourceMessage(a: Room, b: Room) {
+  const aSourceId = Number(a.source_message_id);
+  const bSourceId = Number(b.source_message_id);
+
+  if (Number.isFinite(aSourceId) && Number.isFinite(bSourceId) && aSourceId !== bSourceId) {
+    return bSourceId - aSourceId;
+  }
+
+  return compareByCreatedAt(a, b);
 }

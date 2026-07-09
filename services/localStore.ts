@@ -43,11 +43,22 @@ export function listLocalActiveRooms() {
         new Date(room.created_at).getTime() >= listSince
     )
     .map(withParticipantCounts)
-    .sort(compareRoomsByCreatedAt);
+    .sort(compareRoomsBySourceMessage);
 }
 
 function compareRoomsByCreatedAt(a: Room, b: Room) {
   return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+}
+
+function compareRoomsBySourceMessage(a: Room, b: Room) {
+  const aSourceId = Number(a.source_message_id);
+  const bSourceId = Number(b.source_message_id);
+
+  if (Number.isFinite(aSourceId) && Number.isFinite(bSourceId) && aSourceId !== bSourceId) {
+    return bSourceId - aSourceId;
+  }
+
+  return compareRoomsByCreatedAt(a, b);
 }
 
 export function getLocalRoom(roomId: string) {
@@ -88,6 +99,7 @@ export function upsertLocalRoomFromAnalysis(
             current_people: Math.max(item.current_people, analysis.current_people || 0),
             max_people: analysis.max_people || item.max_people,
             keywords: Array.from(new Set([...(item.keywords ?? []), ...(analysis.keywords ?? [])])),
+            source_message_id: sourceMessageId ?? item.source_message_id,
             last_message_at: now.toISOString(),
             expire_at: addRoomTtl(now).toISOString(),
             updated_at: new Date().toISOString()
