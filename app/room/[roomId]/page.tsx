@@ -15,6 +15,7 @@ import { useNickname } from "@/hooks/useNickname";
 import { useRoom } from "@/hooks/useRoom";
 import { getDeviceId } from "@/lib/deviceId";
 import { cleanDisplayText } from "@/lib/text";
+import { cleanRoomTitle } from "@/lib/title";
 
 export default function RoomPage() {
   const params = useParams<{ roomId: string }>();
@@ -82,6 +83,8 @@ export default function RoomPage() {
   const expired = countdown.expired || room.status === "expired";
   const place = cleanDisplayText(room.destination) || cleanDisplayText(room.origin);
   const meetingText = cleanDisplayText(room.meeting_time_text);
+  const summaryText = cleanDisplayText(room.summary);
+  const showSummary = Boolean(summaryText && cleanRoomTitle(summaryText) !== room.title.trim());
   const detailItems = [meetingText ? `출발: ${meetingText}` : null, place ? `장소: ${place}` : null].filter(Boolean);
 
   const saveProfile = async (nextProfile: typeof profile) => {
@@ -115,7 +118,10 @@ export default function RoomPage() {
         <div className={`grid transition-[grid-template-rows] duration-300 ease-out ${summaryOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
           <div className="overflow-hidden">
             <div className="px-4 pb-4">
-              <p className="text-[15px] font-light leading-relaxed text-ink">{room.summary}</p>
+              {showSummary ? <p className="text-[15px] font-light leading-relaxed text-ink">{summaryText}</p> : null}
+              {!showSummary && !detailItems.length ? (
+                <p className="text-sm font-light text-muted">추가 요약 정보가 없습니다.</p>
+              ) : null}
               {detailItems.length ? (
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-light text-muted">
                   {detailItems.map((item) => (

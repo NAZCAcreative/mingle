@@ -6,6 +6,7 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { CountdownBadge } from "@/components/CountdownBadge";
 import { categoryMeta } from "@/lib/constants";
 import { cleanDisplayText } from "@/lib/text";
+import { cleanRoomTitle } from "@/lib/title";
 import { useCategoryLabels } from "@/hooks/useCategoryLabels";
 import type { Room } from "@/types/room";
 
@@ -15,6 +16,8 @@ export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () =>
   const cta = room.category === "life_question" ? "도와주기" : "입장하기";
   const href = `/room/${room.id}`;
   const place = cleanDisplayText(room.destination) || cleanDisplayText(room.origin);
+  const summaryText = cleanDisplayText(room.summary);
+  const showSummary = Boolean(summaryText && cleanRoomTitle(summaryText) !== room.title.trim());
   const maleCount = room.gender_counts?.male ?? 0;
   const femaleCount = room.gender_counts?.female ?? 0;
   const otherCount = room.gender_counts?.other ?? 0;
@@ -44,7 +47,7 @@ export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () =>
         <div className="space-y-4 overflow-y-auto px-5 py-4">
           <h2 className="text-xl font-light leading-snug tracking-tight text-ink [font-family:var(--font-plex-kr)]">{room.title}</h2>
 
-          {room.summary ? <p className="text-[15px] font-medium leading-relaxed text-muted">{room.summary}</p> : null}
+          {showSummary ? <p className="text-[15px] font-medium leading-relaxed text-muted">{summaryText}</p> : null}
 
           <div className="rounded-card bg-cream p-4">
             <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
