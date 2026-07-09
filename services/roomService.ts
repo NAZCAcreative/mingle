@@ -16,6 +16,8 @@ import {
 import type { AiAnalysis } from "@/types/ai";
 import type { Room } from "@/types/room";
 
+type Gender = "male" | "female" | "other";
+
 export async function listActiveRooms(): Promise<Room[]> {
   const supabase = getServerSupabase();
   if (!supabase) return listLocalActiveRooms();
@@ -28,7 +30,7 @@ export async function listActiveRooms(): Promise<Room[]> {
     .gte("created_at", listSince)
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return data ?? [];
+  return withParticipantCounts(data ?? []);
 }
 
 export async function getRoom(roomId: string): Promise<Room | null> {
@@ -36,7 +38,8 @@ export async function getRoom(roomId: string): Promise<Room | null> {
   if (!supabase) return getLocalRoom(roomId);
   const { data, error } = await supabase.from("rooms").select("*").eq("id", roomId).maybeSingle();
   if (error) throw error;
-  return data;
+  const [room] = await withParticipantCounts(data ? [data] : []);
+  return room ?? null;
 }
 
 export async function expireRooms() {
@@ -117,9 +120,23 @@ export async function upsertRoomFromAnalysis(
   return data as Room;
 }
 
-export async function joinRoom(roomId: string, nickname: string, gender: "male" | "female" | "other") {
+export async function joinRoom(roomId: string, nickname: string, gender: Gender) {
   const supabase = getServerSupabase();
   if (!supabase) return joinLocalRoom(roomId, nickname, gender);
+
+  const { error } = await supabase.from("room_participants").upsert(
+    {
+      room_id: roomId,
+      nickname,
+      gender,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: "room_id,nickname" }
+  );
+  if (error) {
+    if (isMissingParticipantTable(error)) return getRoom(roomId);
+    throw error;
+  }
 
   return getRoom(roomId);
 }
@@ -127,6 +144,12 @@ export async function joinRoom(roomId: string, nickname: string, gender: "male" 
 export async function leaveRoom(roomId: string, nickname: string) {
   const supabase = getServerSupabase();
   if (!supabase) return leaveLocalRoom(roomId, nickname);
+
+  const { error } = await supabase.from("room_participants").delete().eq("room_id", roomId).eq("nickname", nickname);
+  if (error) {
+    if (isMissingParticipantTable(error)) return getRoom(roomId);
+    throw error;
+  }
 
   return getRoom(roomId);
 }
@@ -187,4 +210,43 @@ export async function registerRoomOwner(roomId: string, nickname: string) {
 
 function normalizeNickname(value: string) {
   return value.replace(/\s+/g, "").toLowerCase();
+}
+
+async function withParticipantCounts(rooms: Room[]): Promise<Room[]> {
+  if (!rooms.length) return rooms;
+
+  const supabase = getServerSupabase();
+  if (!supabase) return rooms;
+
+  const roomIds = rooms.map((room) => room.id);
+  const { data, error } = await supabase.from("room_participants").select("room_id, gender").in("room_id", roomIds);
+  if (error) {
+    if (isMissingParticipantTable(error)) return rooms;
+    throw error;
+  }
+
+  const countsByRoom = new Map<string, { male: number; female: number; other: number }>();
+  for (const participant of data ?? []) {
+    const roomId = String(participant.room_id);
+    const gender = String(participant.gender) as Gender;
+    const counts = countsByRoom.get(roomId) ?? { male: 0, female: 0, other: 0 };
+    if (gender === "male" || gender === "female" || gender === "other") counts[gender] += 1;
+    countsByRoom.set(roomId, counts);
+  }
+
+  return rooms.map((room) => {
+    const counts = countsByRoom.get(room.id) ?? { male: 0, female: 0, other: 0 };
+    const participantCount = counts.male + counts.female + counts.other;
+
+    return {
+      ...room,
+      current_people: participantCount,
+      participant_count: participantCount,
+      gender_counts: counts
+    };
+  });
+}
+
+function isMissingParticipantTable(error: { code?: string; message?: string }) {
+  return error.code === "42P01" || error.message?.includes("room_participants");
 }

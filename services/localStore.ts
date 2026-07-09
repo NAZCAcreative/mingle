@@ -218,6 +218,7 @@ function withParticipantCounts(room: Room): Room {
 
   return {
     ...room,
+    current_people: Object.keys(participants).length,
     participant_count: Object.keys(participants).length,
     gender_counts: counts
   };

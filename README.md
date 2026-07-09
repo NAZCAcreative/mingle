@@ -56,6 +56,15 @@ create table messages (
   created_at timestamptz default now()
 );
 
+create table room_participants (
+  room_id uuid references rooms(id) on delete cascade,
+  nickname text not null,
+  gender text not null check (gender in ('male', 'female', 'other')),
+  joined_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  primary key (room_id, nickname)
+);
+
 create table ingested_chats (
   id bigint primary key,
   raw jsonb not null,
@@ -77,6 +86,7 @@ create table ai_logs (
 
 alter publication supabase_realtime add table rooms;
 alter publication supabase_realtime add table messages;
+alter publication supabase_realtime add table room_participants;
 ```
 
 ## API

@@ -20,6 +20,7 @@ export default function RoomPage() {
   const { ready, displayName, profile, setProfile } = useNickname();
   const countdown = useCountdown(room?.expire_at ?? new Date().toISOString());
   const joinedNicknameRef = useRef("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!ready || !profile.gender || !room || countdown.expired || room.status === "expired") return;
@@ -54,6 +55,10 @@ export default function RoomPage() {
     if (!room || !ready) return;
     markJoinedRoomRead(room, messages.at(-1)?.created_at);
   }, [messages, ready, room]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages.length]);
 
   if (loading) {
     return <main className="grid min-h-screen place-items-center px-6 font-black text-muted">채팅방을 불러오는 중이에요</main>;
@@ -101,6 +106,7 @@ export default function RoomPage() {
         {messages.map((message) => (
           <MessageBubble key={message.id} message={message} mine={message.nickname === displayName} />
         ))}
+        <div ref={messagesEndRef} />
       </section>
 
       <MessageInput
