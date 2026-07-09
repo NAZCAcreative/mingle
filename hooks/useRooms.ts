@@ -79,13 +79,7 @@ export function useRooms() {
     return rooms
       .filter((room) => {
         const categoryMatch = category === "all" || room.category === category;
-        const queryMatch =
-          !needle ||
-          [room.title, room.destination, room.origin, ...(room.keywords ?? [])]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase()
-            .includes(needle);
+        const queryMatch = !needle || room.title.toLowerCase().includes(needle);
         return categoryMatch && queryMatch;
       })
       .sort((a, b) => compareRooms(a, b, sortMode));

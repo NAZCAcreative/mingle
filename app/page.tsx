@@ -1,11 +1,10 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Loader2, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, RefreshCw, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CategoryChips } from "@/components/CategoryChips";
 import { EmptyState } from "@/components/EmptyState";
 import { HeroCard } from "@/components/HeroCard";
-import { Mascot } from "@/components/Mascot";
 import { RoomList } from "@/components/RoomList";
 import { SortMenu } from "@/components/SortMenu";
 import { useRooms } from "@/hooks/useRooms";
@@ -16,13 +15,20 @@ export default function HomePage() {
   const { rooms, loading, category, setCategory, sortMode, setSortMode, reload } = useRooms();
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
+  const [query, setQuery] = useState("");
 
-  const totalPages = Math.max(1, Math.ceil(rooms.length / PAGE_SIZE));
+  const filteredRooms = useMemo(() => {
+    const keyword = query.trim().toLowerCase();
+    if (!keyword) return rooms;
+    return rooms.filter((room) => room.title.toLowerCase().includes(keyword));
+  }, [rooms, query]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRooms.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pagedRooms = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    return rooms.slice(start, start + PAGE_SIZE);
-  }, [rooms, currentPage]);
+    return filteredRooms.slice(start, start + PAGE_SIZE);
+  }, [filteredRooms, currentPage]);
 
   const ingest = async () => {
     setRefreshing(true);
@@ -42,8 +48,8 @@ export default function HomePage() {
       <section className="mt-4">
         <div className="mx-4 flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-xl font-semibold text-ink">지금 열린 방</h2>
-            {!loading && rooms.length > 0 ? <p className="mt-1 text-sm font-medium text-muted">총 {rooms.length}개 · {currentPage}/{totalPages}페이지</p> : null}
+            <h2 className="text-xl font-light tracking-tight text-ink [font-family:var(--font-plex-kr)]">지금 열린 방</h2>
+            {!loading && filteredRooms.length > 0 ? <p className="mt-1 text-sm font-medium text-muted">총 {filteredRooms.length}개 · {currentPage}/{totalPages}페이지</p> : null}
           </div>
           <div className="flex w-full items-center gap-2 sm:w-auto">
             <SortMenu value={sortMode} onChange={setSortMode} />
@@ -56,6 +62,22 @@ export default function HomePage() {
             </button>
           </div>
         </div>
+
+        <label className="mx-4 mt-3 flex h-[48px] items-center gap-2 rounded-full border border-blush bg-white px-4 shadow-card focus-within:border-mingle">
+          <Search className="h-5 w-5 shrink-0 text-muted" />
+          <input
+            value={query}
+            onChange={(event) => {
+              const nextQuery = event.target.value;
+              setQuery(nextQuery);
+              if (!nextQuery.trim()) setSortMode("latest");
+              setPage(1);
+            }}
+            placeholder="방 제목 검색"
+            className="h-full min-w-0 flex-1 bg-transparent text-[15px] font-normal outline-none placeholder:text-muted"
+            aria-label="방 검색"
+          />
+        </label>
 
         {loading ? (
           <div className="mx-4 mt-4 rounded-card bg-white p-6 text-center shadow-card">
@@ -70,7 +92,7 @@ export default function HomePage() {
             <div key={`${category}-${sortMode}-${currentPage}`} className="page-slide">
               <RoomList rooms={pagedRooms} />
             </div>
-            {rooms.length > PAGE_SIZE ? (
+            {filteredRooms.length > PAGE_SIZE ? (
               <div className="mx-4 mt-4 flex items-center justify-between gap-3">
                 <button
                   type="button"
@@ -103,12 +125,12 @@ export default function HomePage() {
 
       <HeroCard />
 
-      <aside className="mx-4 mt-4 flex items-center gap-3 rounded-card bg-gradient-to-r from-blush to-white px-4 py-3 shadow-card">
-        <Mascot size="sm" />
-        <div className="min-w-0">
-          <p className="font-semibold text-mingle">방은 6시간 동안 대화가 없으면 자동으로 정리됩니다</p>
-        </div>
-      </aside>
+      <footer className="mx-4 mt-8 border-t border-blush pb-2 pt-5 text-center">
+        <p className="text-sm font-light text-muted">
+          제안·건의 : 카카오톡 ID <span className="font-normal text-ink">nazcq</span>
+        </p>
+        <p className="mt-1 text-xs font-light text-muted">© 2026 교류방 feat. 모두연. All rights reserved.</p>
+      </footer>
     </main>
   );
 }
