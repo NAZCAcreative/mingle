@@ -298,6 +298,8 @@ function SettingsEditor({ settings }: { settings: Array<{ key: string; label: st
   );
 }
 
+const TABLE_PAGE_SIZE = 20;
+
 function MiniTable({
   title,
   rows,
@@ -309,6 +311,11 @@ function MiniTable({
   fields: string[];
   onCloseRoom?: (roomId: string) => void;
 }) {
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(rows.length / TABLE_PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedRows = rows.slice((currentPage - 1) * TABLE_PAGE_SIZE, currentPage * TABLE_PAGE_SIZE);
+
   return (
     <div className="mt-4">
       {title ? <h3 className="mb-2 text-sm font-semibold text-ink">{title}</h3> : null}
@@ -316,7 +323,7 @@ function MiniTable({
         <p className="rounded-xl bg-cream px-3 py-4 text-sm font-medium text-muted">표시할 데이터가 없습니다.</p>
       ) : (
         <div className="overflow-hidden rounded-card border border-blush">
-          {rows.slice(0, 50).map((row, index) => (
+          {pagedRows.map((row, index) => (
             <div key={index} className="border-b border-blush p-3 last:border-b-0">
               {fields.map((field) => (
                 <p key={field} className="grid grid-cols-[136px_minmax(0,1fr)] gap-2 text-sm">
@@ -337,6 +344,29 @@ function MiniTable({
           ))}
         </div>
       )}
+      {rows.length > TABLE_PAGE_SIZE ? (
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
+            disabled={currentPage <= 1}
+            className="h-9 rounded-button bg-white px-3 text-sm font-medium text-ink shadow-card disabled:text-neutral-300"
+          >
+            이전
+          </button>
+          <span className="text-xs font-medium text-muted">
+            {currentPage} / {totalPages} · 총 {rows.length}개
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+            disabled={currentPage >= totalPages}
+            className="h-9 rounded-button bg-mingle px-3 text-sm font-medium text-white shadow-soft disabled:bg-neutral-300"
+          >
+            다음
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
