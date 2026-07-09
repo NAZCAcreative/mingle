@@ -14,12 +14,13 @@ import { markJoinedRoomRead, saveJoinedRoom } from "@/hooks/useMyChatRooms";
 import { useNickname } from "@/hooks/useNickname";
 import { useRoom } from "@/hooks/useRoom";
 import { getDeviceId } from "@/lib/deviceId";
+import { cleanDisplayText } from "@/lib/text";
 
 export default function RoomPage() {
   const params = useParams<{ roomId: string }>();
   const roomId = params.roomId;
   const { room, loading, reload } = useRoom(roomId);
-  const { messages, send } = useMessages(roomId);
+  const { messages, send, reload: reloadMessages } = useMessages(roomId);
   const { ready, displayName, profile, setProfile } = useNickname();
   const countdown = useCountdown(room?.expire_at ?? new Date().toISOString());
   const joinedNicknameRef = useRef("");
@@ -44,16 +45,22 @@ export default function RoomPage() {
         await fetch("/api/rooms/join", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ room_id: roomId, nickname: profile.nickname, gender: profile.gender, device_id: getDeviceId() })
+          body: JSON.stringify({
+            room_id: roomId,
+            nickname: profile.nickname,
+            gender: profile.gender,
+            device_id: getDeviceId(),
+            previous_nickname: previousNickname || undefined
+          })
         });
         saveJoinedRoom(room);
         joinedNicknameRef.current = profile.nickname;
-        await reload();
+        await Promise.all([reload(), reloadMessages()]);
       }
     };
 
     void syncParticipant();
-  }, [countdown.expired, profile.gender, profile.nickname, ready, reload, room, roomId]);
+  }, [countdown.expired, profile.gender, profile.nickname, ready, reload, reloadMessages, room, roomId]);
 
   useEffect(() => {
     if (!room || !ready) return;
@@ -73,8 +80,9 @@ export default function RoomPage() {
   }
 
   const expired = countdown.expired || room.status === "expired";
-  const place = room.destination || room.origin;
-  const detailItems = [room.meeting_time_text ? `출발: ${room.meeting_time_text}` : null, place ? `장소: ${place}` : null].filter(Boolean);
+  const place = cleanDisplayText(room.destination) || cleanDisplayText(room.origin);
+  const meetingText = cleanDisplayText(room.meeting_time_text);
+  const detailItems = [meetingText ? `출발: ${meetingText}` : null, place ? `장소: ${place}` : null].filter(Boolean);
 
   const saveProfile = async (nextProfile: typeof profile) => {
     setProfile(nextProfile);
@@ -84,7 +92,7 @@ export default function RoomPage() {
       body: JSON.stringify({ room_id: roomId, nickname: nextProfile.nickname, gender: nextProfile.gender, device_id: getDeviceId() })
     });
     saveJoinedRoom(room);
-    await reload();
+    await Promise.all([reload(), reloadMessages()]);
   };
 
   return (

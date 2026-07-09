@@ -1,6 +1,6 @@
 import { ROOM_LIST_WINDOW_HOURS } from "@/lib/constants";
 import { findMergeCandidate } from "@/lib/matcher";
-import { addRoomTtl } from "@/lib/time";
+import { addRoomTtl, computeRoomExpireAt } from "@/lib/time";
 import { cleanRoomTitle } from "@/lib/title";
 import type { AiAnalysis } from "@/types/ai";
 import type { Message } from "@/types/message";
@@ -101,7 +101,9 @@ export function upsertLocalRoomFromAnalysis(
             keywords: Array.from(new Set([...(item.keywords ?? []), ...(analysis.keywords ?? [])])),
             source_message_id: sourceMessageId ?? item.source_message_id,
             last_message_at: now.toISOString(),
-            expire_at: addRoomTtl(now).toISOString(),
+            expire_at: new Date(
+              Math.max(computeRoomExpireAt(now, analysis.meeting_time_text).getTime(), new Date(item.expire_at).getTime())
+            ).toISOString(),
             updated_at: new Date().toISOString()
           }
         : item
@@ -126,7 +128,7 @@ export function upsertLocalRoomFromAnalysis(
     kakao_sender: kakaoSender ?? null,
     owner_nickname: null,
     last_message_at: now.toISOString(),
-    expire_at: addRoomTtl(now).toISOString(),
+    expire_at: computeRoomExpireAt(now, analysis.meeting_time_text).toISOString(),
     created_at: now.toISOString(),
     updated_at: now.toISOString()
   };
@@ -152,14 +154,16 @@ export function listLocalMessages(roomId: string) {
   return state.messages[roomId] ?? [];
 }
 
-export function joinLocalRoom(roomId: string, nickname: string, gender: Gender) {
+export function joinLocalRoom(roomId: string, nickname: string, gender: Gender, previousNickname?: string) {
   if (!state.rooms.some((room) => room.id === roomId)) return null;
   const isNewJoin = !(nickname in (state.participants[roomId] ?? {}));
   state.participants[roomId] = {
     ...(state.participants[roomId] ?? {}),
     [nickname]: gender
   };
-  if (isNewJoin) createLocalMessage(roomId, "SYSTEM", `${nickname}님이 입장했습니다`);
+  const renamed = Boolean(previousNickname && previousNickname !== nickname);
+  if (renamed) createLocalMessage(roomId, "SYSTEM", `${previousNickname}님이 ${nickname}님으로 닉네임을 변경했습니다`);
+  else if (isNewJoin) createLocalMessage(roomId, "SYSTEM", `${nickname}님이 입장했습니다`);
   return getLocalRoom(roomId);
 }
 
@@ -204,7 +208,12 @@ export function createLocalMessage(roomId: string, nickname: string, content: st
   state.messages[roomId] = [...(state.messages[roomId] ?? []), message];
   state.rooms = state.rooms.map((room) =>
     room.id === roomId
-      ? { ...room, last_message_at: now.toISOString(), expire_at: addRoomTtl(now).toISOString(), updated_at: now.toISOString() }
+      ? {
+          ...room,
+          last_message_at: now.toISOString(),
+          expire_at: new Date(Math.max(addRoomTtl(now).getTime(), new Date(room.expire_at).getTime())).toISOString(),
+          updated_at: now.toISOString()
+        }
       : room
   );
   return message;

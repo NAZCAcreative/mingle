@@ -3,11 +3,13 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef } from "react";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { categoryMeta, visibleCategories } from "@/lib/constants";
+import { visibleCategories } from "@/lib/constants";
+import { useCategoryLabels } from "@/hooks/useCategoryLabels";
 import type { Category } from "@/types/room";
 
 export function CategoryChips({ selected, onSelect }: { selected: Category; onSelect: (category: Category) => void }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const labels = useCategoryLabels();
 
   const scrollNext = () => {
     scrollRef.current?.scrollBy({ left: 112, behavior: "smooth" });
@@ -31,7 +33,7 @@ export function CategoryChips({ selected, onSelect }: { selected: Category; onSe
               }`}
             >
               <CategoryIcon category={category} className="h-8 w-8" />
-              {categoryMeta[category].label}
+              {labels[category]}
             </button>
           );
         })}

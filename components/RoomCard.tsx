@@ -7,6 +7,8 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { CountdownBadge } from "@/components/CountdownBadge";
 import { RoomPreviewModal } from "@/components/RoomPreviewModal";
 import { categoryMeta } from "@/lib/constants";
+import { useCategoryLabels } from "@/hooks/useCategoryLabels";
+import { cleanDisplayText } from "@/lib/text";
 import { formatChatAt } from "@/lib/time";
 import type { Room } from "@/types/room";
 
@@ -14,14 +16,15 @@ export function RoomCard({ room }: { room: Room }) {
   const [copied, setCopied] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const meta = categoryMeta[room.category];
+  const labels = useCategoryLabels();
   const isQuestion = room.status === "answering";
   const cta = room.category === "life_question" ? "도와주기" : "입장하기";
   const href = `/room/${room.id}`;
-  const place = room.destination || room.origin;
+  const place = cleanDisplayText(room.destination) || cleanDisplayText(room.origin);
   const maleCount = room.gender_counts?.male ?? 0;
   const femaleCount = room.gender_counts?.female ?? 0;
   const otherCount = room.gender_counts?.other ?? 0;
-  const detailParts = [isQuestion ? null : room.meeting_time_text, place].filter(Boolean);
+  const detailParts = [isQuestion ? null : cleanDisplayText(room.meeting_time_text), place].filter(Boolean);
 
   const copyLink = async () => {
     const url = `${window.location.origin}${href}`;
@@ -34,7 +37,7 @@ export function RoomCard({ room }: { room: Room }) {
     <article className="rounded-card border border-blush bg-white p-4 shadow-card">
       <button type="button" onClick={() => setPreviewOpen(true)} className="block w-full text-left" aria-label="방 정보 보기">
         <div className="flex items-start justify-between gap-2">
-          <span className={`flex h-[34px] items-center rounded-md px-2.5 text-[14px] font-light ${meta.badge}`}>{meta.label}</span>
+          <span className={`flex h-[34px] items-center rounded-md px-2.5 text-[14px] font-light ${meta.badge}`}>{labels[room.category]}</span>
           <span className="flex h-[34px] shrink-0 items-center rounded-md border border-neutral-100 bg-neutral-50 px-2.5 text-[14px] font-light text-neutral-600">
             {formatChatAt(room.last_message_at)}
           </span>

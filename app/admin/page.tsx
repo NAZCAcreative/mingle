@@ -16,6 +16,8 @@ type AdminOverview = {
   aiLogs: Array<Record<string, string | number | null>>;
   messages: Array<Record<string, string | number | null>>;
   participants: Array<Record<string, string | number | null>>;
+  nicknameEvents: Array<Record<string, string | number | null>>;
+  nicknameUsers: Array<Record<string, string | number | null>>;
   categories: Array<{ category: string; label: string; rooms: number }>;
   settings: Array<{ key: string; label: string; value: string }>;
 };
@@ -198,8 +200,44 @@ function buildSection(active: string, data: AdminOverview | null, onCloseRoom: (
   if (active === "생성 실패 로그") return <MiniTable rows={data.aiLogs.filter((log) => log.action === "skipped")} fields={["source_chat_id", "raw_message", "created_at"]} />;
   if (active === "방장 관리") return <MiniTable rows={data.rooms.filter((room) => room.owner_nickname)} fields={["title", "owner_nickname", "source_message_id"]} />;
   if (active === "채팅 모니터링") return <MiniTable rows={data.messages} fields={["nickname", "content", "room_id", "created_at"]} />;
-  if (active === "사용자/닉네임 관리") return <MiniTable rows={data.participants} fields={["nickname", "gender", "device_id", "room_id", "updated_at"]} />;
-  if (active === "카테고리 관리") return <MiniTable rows={data.categories} fields={["label", "category", "rooms"]} />;
+  if (active === "사용자/닉네임 관리") {
+    return (
+      <div className="mt-4 space-y-3">
+        <MiniTable
+          title="닉네임 사용자 (기기별)"
+          rows={data.nicknameUsers ?? []}
+          fields={["nickname", "gender", "device_id", "changes", "last_updated"]}
+        />
+        <MiniTable
+          title="닉네임 수정 이력"
+          rows={data.nicknameEvents ?? []}
+          fields={["nickname", "gender", "device_id", "created_at"]}
+        />
+        <MiniTable
+          title="방 참여 현황"
+          rows={data.participants}
+          fields={["nickname", "gender", "device_id", "room_id", "updated_at"]}
+        />
+      </div>
+    );
+  }
+  if (active === "카테고리 관리") {
+    return (
+      <div className="mt-4 space-y-3">
+        <MiniTable title="카테고리 현황" rows={data.categories} fields={["label", "category", "rooms"]} />
+        <div>
+          <h3 className="mb-1 text-sm font-semibold text-ink">표시명 수정</h3>
+          <SettingsEditor
+            settings={data.categories.map((item) => ({
+              key: `category_label_${item.category}`,
+              label: `${item.category} 표시명`,
+              value: item.label
+            }))}
+          />
+        </div>
+      </div>
+    );
+  }
   if (active === "운영 설정") return <SettingsEditor settings={data.settings} />;
 
   return <p className="mt-4 text-sm font-medium text-muted">배너/공지 DB 테이블을 연결하면 이 영역에서 관리합니다.</p>;
@@ -281,8 +319,8 @@ function MiniTable({
           {rows.slice(0, 50).map((row, index) => (
             <div key={index} className="border-b border-blush p-3 last:border-b-0">
               {fields.map((field) => (
-                <p key={field} className="grid grid-cols-[92px_minmax(0,1fr)] gap-2 text-sm">
-                  <span className="font-medium text-muted">{field}</span>
+                <p key={field} className="grid grid-cols-[136px_minmax(0,1fr)] gap-2 text-sm">
+                  <span className="min-w-0 truncate font-medium text-muted" title={field}>{field}</span>
                   <span className="min-w-0 truncate text-ink">{String(row[field] ?? "-")}</span>
                 </p>
               ))}

@@ -21,9 +21,12 @@ export async function createMessage(roomId: string, nickname: string, content: s
     .select("*")
     .single();
   if (error) throw error;
+  const { data: roomRow } = await supabase.from("rooms").select("expire_at").eq("id", roomId).maybeSingle();
+  const currentExpire = roomRow?.expire_at ? new Date(roomRow.expire_at).getTime() : 0;
+  const nextExpire = new Date(Math.max(addRoomTtl(now).getTime(), currentExpire));
   const { error: roomError } = await supabase
     .from("rooms")
-    .update({ last_message_at: now.toISOString(), expire_at: addRoomTtl(now).toISOString(), updated_at: now.toISOString() })
+    .update({ last_message_at: now.toISOString(), expire_at: nextExpire.toISOString(), updated_at: now.toISOString() })
     .eq("id", roomId);
   if (roomError) throw roomError;
   return data as Message;

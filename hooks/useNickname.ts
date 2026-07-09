@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { getDeviceId } from "@/lib/deviceId";
 
 export type Gender = "male" | "female" | "other";
 
@@ -49,6 +50,14 @@ export function useNickname() {
     localStorage.setItem("mingle_nickname", value.nickname);
     setProfileState(value);
     window.dispatchEvent(new Event(profileEvent));
+
+    if (value.nickname) {
+      void fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device_id: getDeviceId(), nickname: value.nickname, gender: value.gender })
+      }).catch(() => {});
+    }
   };
 
   const displayName = useMemo(() => {

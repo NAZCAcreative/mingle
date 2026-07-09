@@ -1,6 +1,6 @@
 import { ROOM_LIST_WINDOW_HOURS, ROOM_TTL_HOURS } from "@/lib/constants";
 import { findMergeCandidate } from "@/lib/matcher";
-import { addRoomTtl, parseKoreanSentAtText } from "@/lib/time";
+import { addRoomTtl, computeRoomExpireAt, parseKoreanSentAtText } from "@/lib/time";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { createMessage } from "@/services/messageService";
 import { cleanRoomTitle } from "@/lib/title";
@@ -78,7 +78,8 @@ export async function upsertRoomFromAnalysis(
   // 원본 메시지 시각 기준으로 방을 생성한다. TTL이 이미 지난 옛 메시지는 방을 만들지 않는다.
   const sourceTime = sourceCreatedAt ? new Date(sourceCreatedAt) : null;
   const baseTime = sourceTime && !Number.isNaN(sourceTime.getTime()) ? sourceTime : new Date();
-  if (Date.now() - baseTime.getTime() > ROOM_TTL_HOURS * 60 * 60 * 1000) return null;
+  const expireAt = computeRoomExpireAt(baseTime, analysis.meeting_time_text);
+  if (expireAt.getTime() <= Date.now()) return null;
 
   if (!supabase) return upsertLocalRoomFromAnalysis(analysis, sourceMessageId, kakaoSender, baseTime);
 
@@ -94,7 +95,7 @@ export async function upsertRoomFromAnalysis(
         keywords: Array.from(new Set([...(candidate.keywords ?? []), ...(analysis.keywords ?? [])])),
         source_message_id: sourceMessageId,
         last_message_at: baseTime.toISOString(),
-        expire_at: addRoomTtl(baseTime).toISOString(),
+        expire_at: new Date(Math.max(expireAt.getTime(), new Date(candidate.expire_at).getTime())).toISOString(),
         updated_at: new Date().toISOString()
       })
       .eq("id", candidate.id)
@@ -123,7 +124,7 @@ export async function upsertRoomFromAnalysis(
       owner_nickname: null,
       created_at: baseTime.toISOString(),
       last_message_at: baseTime.toISOString(),
-      expire_at: addRoomTtl(baseTime).toISOString()
+      expire_at: expireAt.toISOString()
     })
     .select("*")
     .single();
@@ -131,9 +132,9 @@ export async function upsertRoomFromAnalysis(
   return data as Room;
 }
 
-export async function joinRoom(roomId: string, nickname: string, gender: Gender, deviceId?: string) {
+export async function joinRoom(roomId: string, nickname: string, gender: Gender, deviceId?: string, previousNickname?: string) {
   const supabase = getServerSupabase();
-  if (!supabase) return joinLocalRoom(roomId, nickname, gender);
+  if (!supabase) return joinLocalRoom(roomId, nickname, gender, previousNickname);
 
   const timestamp = new Date().toISOString();
   const base: Record<string, string> = {
@@ -144,7 +145,7 @@ export async function joinRoom(roomId: string, nickname: string, gender: Gender,
   };
   const withDevice: Record<string, string> = deviceId ? { ...base, device_id: deviceId } : base;
 
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from("room_participants")
     .select("nickname")
     .eq("room_id", roomId)
@@ -159,18 +160,25 @@ export async function joinRoom(roomId: string, nickname: string, gender: Gender,
   if (error) {
     // upsert needs a (room_id, nickname) unique constraint; fall back to manual write
     if (existing) {
-      await supabase.from("room_participants").update({ gender, updated_at: timestamp }).eq("room_id", roomId).eq("nickname", nickname);
+      ({ error } = await supabase.from("room_participants").update({ gender, updated_at: timestamp }).eq("room_id", roomId).eq("nickname", nickname));
     } else {
-      const inserted = await supabase.from("room_participants").insert(withDevice);
-      if (inserted.error && deviceId) await supabase.from("room_participants").insert(base);
+      ({ error } = await supabase.from("room_participants").insert(withDevice));
+      if (error && deviceId) ({ error } = await supabase.from("room_participants").insert(base));
     }
   }
 
-  if (!existing) {
+  // 참여 상태를 확실히 알고(조회 성공) 기록도 성공했을 때만 안내 메시지를 남긴다.
+  // 그렇지 않으면 방문할 때마다 "입장했습니다"가 반복 기록된다.
+  const renamed = Boolean(previousNickname && previousNickname !== nickname);
+  if (!existingError && !error && (renamed || !existing)) {
     try {
-      await createMessage(roomId, "SYSTEM", `${nickname}님이 입장했습니다`);
+      await createMessage(
+        roomId,
+        "SYSTEM",
+        renamed ? `${previousNickname}님이 ${nickname}님으로 닉네임을 변경했습니다` : `${nickname}님이 입장했습니다`
+      );
     } catch {
-      // 입장 메시지는 실패해도 참여 자체를 막지 않는다
+      // 안내 메시지는 실패해도 참여 자체를 막지 않는다
     }
   }
 

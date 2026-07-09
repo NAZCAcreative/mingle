@@ -58,6 +58,14 @@ type SettingRow = {
   value: string | null;
 };
 
+type NicknameEventRow = {
+  id: number;
+  device_id: string | null;
+  nickname: string;
+  gender: string | null;
+  created_at: string;
+};
+
 export async function GET() {
   const supabase = getServerSupabase();
 
@@ -73,18 +81,21 @@ export async function GET() {
       aiLogs: [],
       messages: [],
       participants: [],
-      categories: categoryStats([]),
+      nicknameEvents: [],
+      nicknameUsers: [],
+      categories: categoryStats([], new Map()),
       settings: defaultSettings()
     });
   }
 
-  const [roomsResult, chatsResult, aiLogsResult, messagesResult, participantsResult, settingsResult] = await Promise.all([
+  const [roomsResult, chatsResult, aiLogsResult, messagesResult, participantsResult, settingsResult, nicknameEventsResult] = await Promise.all([
     supabase.from("rooms").select("*").order("created_at", { ascending: false }).limit(500),
     supabase.from("ingested_chats").select("id,sender,content,created_at,processed_at").order("id", { ascending: false }).limit(300),
     supabase.from("ai_logs").select("id,source_chat_id,raw_message,action,room_id,created_at").order("created_at", { ascending: false }).limit(300),
     supabase.from("messages").select("id,room_id,nickname,content,created_at").order("created_at", { ascending: false }).limit(300),
     supabase.from("room_participants").select("*").order("updated_at", { ascending: false }).limit(500),
-    supabase.from("app_settings").select("key,value")
+    supabase.from("app_settings").select("key,value"),
+    supabase.from("nickname_events").select("*").order("created_at", { ascending: false }).limit(500)
   ]);
 
   const rooms = readRows<RoomRow>(roomsResult);
@@ -95,6 +106,8 @@ export async function GET() {
   const settingOverrides = new Map(
     readRows<SettingRow>(settingsResult).map((row) => [row.key, row.value ?? ""])
   );
+  const nicknameEvents = readRows<NicknameEventRow>(nicknameEventsResult);
+  const nicknameUsers = groupNicknameUsers(nicknameEvents);
   const now = Date.now();
   const closingWindowMs = 30 * 60 * 1000;
   const closingRooms = rooms.filter((room) => {
@@ -124,7 +137,9 @@ export async function GET() {
     aiLogs,
     messages,
     participants,
-    categories: categoryStats(rooms),
+    nicknameEvents,
+    nicknameUsers,
+    categories: categoryStats(rooms, settingOverrides),
     settings: defaultSettings().map((setting) => ({
       ...setting,
       value: settingOverrides.get(setting.key) ?? setting.value
@@ -146,14 +161,42 @@ function emptyStats() {
   };
 }
 
-function categoryStats(rooms: RoomRow[]) {
+function categoryStats(rooms: RoomRow[], overrides: Map<string, string>) {
   return Object.entries(categoryMeta)
     .filter(([key]) => key !== "all")
     .map(([key, meta]) => ({
       category: key,
-      label: meta.label,
+      label: overrides.get(`category_label_${key}`) || meta.label,
       rooms: rooms.filter((room) => room.category === key).length
     }));
+}
+
+function groupNicknameUsers(events: NicknameEventRow[]) {
+  const users = new Map<
+    string,
+    { device_id: string; nickname: string; gender: string | null; changes: number; first_seen: string; last_updated: string }
+  >();
+
+  // events are ordered newest first
+  for (const event of events) {
+    const deviceId = event.device_id ?? "(unknown)";
+    const existing = users.get(deviceId);
+    if (!existing) {
+      users.set(deviceId, {
+        device_id: deviceId,
+        nickname: event.nickname,
+        gender: event.gender,
+        changes: 1,
+        first_seen: event.created_at,
+        last_updated: event.created_at
+      });
+    } else {
+      existing.changes += 1;
+      existing.first_seen = event.created_at;
+    }
+  }
+
+  return Array.from(users.values());
 }
 
 function defaultSettings() {

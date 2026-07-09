@@ -126,9 +126,14 @@ export default function HomePage() {
       <HeroCard />
 
       <footer className="mx-4 mt-8 border-t border-blush pb-2 pt-5 text-center">
-        <p className="text-sm font-light text-muted">
-          제안·건의 : 카카오톡 ID <span className="font-normal text-ink">nazcq</span>
-        </p>
+        <a
+          href="https://open.kakao.com/o/gK9APjDi"
+          target="_blank"
+          rel="noreferrer"
+          className="text-sm font-light text-muted underline underline-offset-2"
+        >
+          제안·건의 오픈채팅 바로가기
+        </a>
         <p className="mt-1 text-xs font-light text-muted">© 2026 교류방 feat. 모두연. All rights reserved.</p>
       </footer>
     </main>

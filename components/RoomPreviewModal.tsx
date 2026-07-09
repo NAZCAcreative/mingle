@@ -5,13 +5,16 @@ import Link from "next/link";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CountdownBadge } from "@/components/CountdownBadge";
 import { categoryMeta } from "@/lib/constants";
+import { cleanDisplayText } from "@/lib/text";
+import { useCategoryLabels } from "@/hooks/useCategoryLabels";
 import type { Room } from "@/types/room";
 
 export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () => void }) {
   const meta = categoryMeta[room.category];
+  const labels = useCategoryLabels();
   const cta = room.category === "life_question" ? "도와주기" : "입장하기";
   const href = `/room/${room.id}`;
-  const place = room.destination || room.origin;
+  const place = cleanDisplayText(room.destination) || cleanDisplayText(room.origin);
   const maleCount = room.gender_counts?.male ?? 0;
   const femaleCount = room.gender_counts?.female ?? 0;
   const otherCount = room.gender_counts?.other ?? 0;
@@ -25,7 +28,7 @@ export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () =>
             <span className={`grid h-9 w-9 place-items-center rounded-full ${meta.tint}`}>
               <CategoryIcon category={room.category} className={`h-5 w-5 ${meta.iconColor}`} />
             </span>
-            <span className={`rounded-md px-2 py-1 text-[13px] font-light ${meta.badge}`}>{meta.label}</span>
+            <span className={`rounded-md px-2 py-1 text-[13px] font-light ${meta.badge}`}>{labels[room.category]}</span>
           </div>
           <button
             type="button"
@@ -57,7 +60,7 @@ export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () =>
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-sm font-light text-muted">
-            <span className="rounded-xl bg-cream px-3 py-2">시간: {room.meeting_time_text || "미정"}</span>
+            <span className="rounded-xl bg-cream px-3 py-2">시간: {cleanDisplayText(room.meeting_time_text) || "미정"}</span>
             <span className="rounded-xl bg-cream px-3 py-2">장소: {place || "미정"}</span>
           </div>
 
