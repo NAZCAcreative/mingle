@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { removeJoinedRoom } from "@/hooks/useMyChatRooms";
 
-export function LeaveRoomButton({ roomId, nickname }: { roomId: string; nickname: string }) {
+export function LeaveRoomButton({ roomId, nickname, onLeft }: { roomId: string; nickname: string; onLeft?: () => void }) {
   const router = useRouter();
   const [leaving, setLeaving] = useState(false);
 
@@ -21,7 +21,8 @@ export function LeaveRoomButton({ roomId, nickname }: { roomId: string; nickname
       });
     }
     removeJoinedRoom(roomId);
-    router.push("/");
+    if (onLeft) onLeft();
+    else router.push("/");
   };
 
   return (

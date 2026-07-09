@@ -2,16 +2,26 @@
 
 import { Crown, Link as LinkIcon, Users, X } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CountdownBadge } from "@/components/CountdownBadge";
+import { LeaveRoomButton } from "@/components/LeaveRoomButton";
 import { categoryMeta } from "@/lib/constants";
 import { cleanDisplayText } from "@/lib/text";
 import { cleanRoomTitle } from "@/lib/title";
+import { isJoinedRoom } from "@/hooks/useMyChatRooms";
+import { useNickname } from "@/hooks/useNickname";
 import { useCategoryLabels } from "@/hooks/useCategoryLabels";
 import type { Room } from "@/types/room";
 
 export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () => void }) {
   const meta = categoryMeta[room.category];
+  const { profile } = useNickname();
+  const [joined, setJoined] = useState(false);
+
+  useEffect(() => {
+    setJoined(isJoinedRoom(room.id));
+  }, [room.id]);
   const labels = useCategoryLabels();
   const cta = room.category === "life_question" ? "도와주기" : "입장하기";
   const href = `/room/${room.id}`;
@@ -88,6 +98,18 @@ export function RoomPreviewModal({ room, onClose }: { room: Room; onClose: () =>
             <LinkIcon className="h-5 w-5" />
             {cta}
           </Link>
+          {joined ? (
+            <div className="mt-2 flex justify-center">
+              <LeaveRoomButton
+                roomId={room.id}
+                nickname={profile.nickname}
+                onLeft={() => {
+                  setJoined(false);
+                  onClose();
+                }}
+              />
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

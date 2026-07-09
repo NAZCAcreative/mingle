@@ -58,6 +58,11 @@ export function saveJoinedRoom(room: Room) {
   writeJoinedRooms([nextRoom, ...rooms.filter((item) => item.id !== room.id)]);
 }
 
+export function isJoinedRoom(roomId: string) {
+  if (typeof window === "undefined") return false;
+  return readJoinedRooms().some((room) => room.id === roomId);
+}
+
 export function removeJoinedRoom(roomId: string) {
   writeJoinedRooms(readJoinedRooms().filter((room) => room.id !== roomId));
 }
