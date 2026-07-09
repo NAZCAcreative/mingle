@@ -26,7 +26,7 @@ export async function ingestChats() {
     : { data: null };
   const baseUrl = process.env.CHAT_SOURCE_URL || "https://dm.kggstudio.com/chats";
   const storedAfterId = latest?.id ?? latestLocalIngestedId();
-  const latestWindowAfterId = await resolveLatestWindowAfterId(baseUrl);
+  const latestWindowAfterId = await resolveLatestWindowAfterId(baseUrl, storedAfterId ?? 0);
   const afterId = storedAfterId ? Math.max(storedAfterId, latestWindowAfterId) : latestWindowAfterId;
   const response = await fetchChatsAfter(baseUrl, afterId);
 
@@ -112,9 +112,12 @@ async function fetchChatsAfter(baseUrl: string, afterId: number) {
   return response;
 }
 
-async function resolveLatestWindowAfterId(baseUrl: string) {
-  let afterId = 100;
-  const ids: number[] = [];
+// 피드의 마지막 id를 찾아, 최신 id - 200까지만 수집 대상으로 삼는다
+const RECENT_WINDOW_SIZE = 200;
+
+async function resolveLatestWindowAfterId(baseUrl: string, startFromId = 0) {
+  let afterId = Math.max(100, startFromId);
+  let lastId = afterId;
 
   for (let page = 0; page < 50; page += 1) {
     const response = await fetchChatsAfter(baseUrl, afterId);
@@ -125,7 +128,7 @@ async function resolveLatestWindowAfterId(baseUrl: string) {
 
     for (const chat of chats) {
       const id = Number(chat.id);
-      if (id) ids.push(id);
+      if (id > lastId) lastId = id;
     }
 
     const nextAfterId = Number(chats.at(-1)?.id);
@@ -133,7 +136,5 @@ async function resolveLatestWindowAfterId(baseUrl: string) {
     afterId = nextAfterId;
   }
 
-  const sortedIds = ids.sort((a, b) => a - b);
-  const firstLatestId = sortedIds.at(-500);
-  return firstLatestId ? Math.max(100, firstLatestId - 1) : 100;
+  return Math.max(100, lastId - RECENT_WINDOW_SIZE);
 }
